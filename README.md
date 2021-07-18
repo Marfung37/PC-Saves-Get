@@ -38,12 +38,16 @@ Give the percent of saves based on the path file
 ``--wanted-save`` or ``-w`` - the save expression  
 ``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
 ``--all`` or ``-a`` - output all of the saves and corresponding percents  
+
   * Note: At least one of ``-w``, ``-k``, or ``-a`` is required to run percent  
   * Note: If ``-w``, ``-k``, or ``-a`` are included, they will be concatanated together </ul>
+
 ``--pieces`` or ``-p`` - pieces used on the setup  
 ``--pc-num`` or ``-pc`` - pc num for setup & solve  
-  * Note: At least one of ``-p`` or ``-pc`` is required for percent
+
+  * Note: At least one of ``-p`` or ``-pc`` is required for percent  
   * Note: If both ``-p`` and ``-pc`` is included, ``-p`` would take precedence </ul>
+
 ``--path``  or ``-f`` - path file directory (default: output/path.csv)  
 ``--output`` or ``-o`` - output file directory (default: output/saves.txt)  
 ``--print`` or ``-pr`` - print out the output into the terminal (default: true)  
