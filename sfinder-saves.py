@@ -798,6 +798,6 @@ def runTestCases():
     tests.close()
 
 if __name__ == "__main__":
-    #s = Saves()
-    #s.handleParse()
-    runTestCases()
+    s = Saves()
+    s.handleParse()
+    #runTestCases()
