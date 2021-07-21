@@ -1,0 +1,7 @@
+
+{
+    "7thTReplace": ["TT", "/TT[^O]*$/", "/TT[^S]*$/||/TT[^Z]*$/", "/TT[^I]*$/", "/TT[^L]*$/||/TT[^J]*$/"],
+    "2ndSaves": ["T||O", "T", "O"],
+    "1stSaves": ["/T[^T]/", "/[LJ]{2}/", "/T[^T]/||/[LJ]{2}/"],
+    "1stAvoidBad": "^/^[^TLJ]*[LJ][^LJ]*$/"
+}

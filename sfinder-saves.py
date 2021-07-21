@@ -11,9 +11,13 @@ class Saves():
     pathFile = "output/path.csv"
     percentOutput = "output/savesPercent.txt"
 
-    wantedSavesJSON = "wantedSavesMap.json"
-    fumenLabels = "fumenScripts/fumenLabels.js"
-    scripts = "fumenScripts/scriptsOutput.txt"
+    filteredPath = "resources/filteredPath.txt"
+    filterOutput = "output/filteredSolves.txt"
+
+    wantedSavesJSON = "resources/wantedSavesMap.json"
+    fumenLabels = "resources/fumenLabels.js"
+    fumenCombine = "resources/fumenCombine.js"
+    scripts = "resources/scriptsOutput.txt"
     bestSave = "bestSaves/"
 
     def __init__(self):
@@ -22,8 +26,13 @@ class Saves():
     def __setupParser(self):
         self.__parser = argparse.ArgumentParser(usage="<cmd> [options]", description="A tool for further expansion of the saves from path.csv")
         subparsers = self.__parser.add_subparsers()
-        
-        percentParser = subparsers.add_parser("percent", help="Give the percents of saves using the path.csv file with wanted save expression")
+
+        self.__setupPercentParser(subparsers)
+        self.__setupFilterParser(subparsers)
+    
+
+    def __setupPercentParser(self, parser):
+        percentParser = parser.add_parser("percent", help="Give the percents of saves using the path.csv file with wanted save expression")
         percentParser.set_defaults(func=self.__percentParse)
         percentParser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
         percentParser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
@@ -36,10 +45,27 @@ class Saves():
         percentParser.add_argument("-fr", "--fraction", help="include the fraction along with the percent (default: True)", action="store_false")
         percentParser.add_argument("-fa", "--fails", help="include the fail queues for saves in output (default: False)", action="store_true")
         percentParser.add_argument("-os", "--over-solves", help="have the percents be saves/solves (default: False)", action="store_true")
+    
+    def __setupFilterParser(self, parser):
+        filterParser = parser.add_parser("filter", help="filter path.csv of fumens that doesn't meet the wanted saves")
+        filterParser.set_defaults(func=self.__filterParse)
+        filterParser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
+        filterParser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
+        filterParser.add_argument("-p", "--pieces", help="pieces used on the setup (required unless there's -pc)", metavar="<string>", nargs='+')
+        filterParser.add_argument("-pc", "--pc-num", help="pc num for the setup & solve (required unless there's -p)", metavar="<int>", type=int)
+        filterParser.add_argument("-f", "--path", help="path file directory (default: output/path.csv)", metavar="<directory>", default=self.pathFile, type=str)
+        filterParser.add_argument("-o", "--output", help="output file directory (default: output/filteredSolves)", metavar="<directory>", default=self.filterOutput, type=str)
+        filterParser.add_argument("-pr", "--print", help="log to terminal (default: True)", action="store_false")
+        filterParser.add_argument("-s", "--solve", help="setting for how to output solve (minimal, unique, None)(default: minimal)", choices={"minimal", "unique", "None"}, metavar="<string>", default="minimal", type=str)
+        filterParser.add_argument("-t", "--tinyurl", help="output the link with tinyurl if possible (default: True)", action="store_false")
+        filterParser.add_argument("-fc", "--fumen-code", help="include the fumen code in the output (default: False)", action="store_true")
 
     def handleParse(self, customInput=os.sys.argv[1:]):
         args = self.__parser.parse_args(customInput)
-        args.func(args)
+        if vars(args):
+            args.func(args)
+        else:
+            print("No Command Inputted")
 
     def __percentParse(self, args):
         percentFuncArgs = {}
@@ -82,8 +108,8 @@ class Saves():
         self.percent(wantedSaves, pieces, pcNum, percentFuncArgs)
 
     # return an dictionary including all the wantedSaves over the path file
-    def percent(self, wantedSaves="", pieces="", pcNum=-1, args={}):
-        defaultConfig = {
+    def percent(self, wantedSaves, pieces="", pcNum=-1, args={}):
+        defaultArgs = {
             "Path File": self.pathFile,
             "Output File": self.percentOutput,
             "Print": True,
@@ -92,11 +118,12 @@ class Saves():
             "Fails": False,
             "Over Solves": False
         }
-        defaultConfig.update(args)
-        args = defaultConfig
+        defaultArgs.update(args)
+        args = defaultArgs
 
         if not os.path.exists(args["Path File"]):
-            raise OSError(f'the path to "{args["Path File"]}" could not be found!')
+            print(f'The path to "{args["Path File"]}" could not be found!')
+            return
 
         countWanted = {}
         wantedSavesFails = {}
@@ -114,13 +141,7 @@ class Saves():
                 wantedStacks.append(self.__makeStack(wantedSave))
 
         # from pieces get the pieces given for the possible pieces in the last bag of the pc and it's length
-        if pieces:
-            lastBag, newBagNumUsed = self.__findLastBag(pieces)
-        elif pcNum != -1:
-            lastBag = set(self.PIECES)
-            newBagNumUsed = (pcNum * 3) % 7 + 1
-        else:
-            raise SyntaxError("One of pieces or pcNum must be filled out")
+        lastBag, newBagNumUsed = self.__findLastBag(pieces, pcNum)
 
         totalCases = self.__getPercentData(lastBag, newBagNumUsed, wantedStacks, countWanted, countAll, storeAllPreviousQs, wantedSavesFails, args)
         
@@ -221,15 +242,90 @@ class Saves():
         
         return "\n".join(allStr)
 
-    # filter the path fumen's for the particular save
-    def filter(self, args):
-        wantedSaves = args["wanted-saves"]
+    def __filterParse(self, args):
+        filterFuncArgs = {}
 
-        headerLine = ""
+        # semi-required options
+        wantedSaves = []
+        if args.wanted_saves is not None:
+            wantedSaves.extend(args.wanted_saves)
+        if args.key is not None:
+            with open(self.wantedSavesJSON, "r") as outfile:
+                wantedSaveDict = json.loads(outfile.read())
+            wantedSaves.extend([",".join(wantedSaveDict[k]) for k in args.key])
+        wantedSaves = ",".join(wantedSaves)
+
+        if not wantedSaves:
+            # didn't have the wanted-saves nor a key
+            print("Syntax Error: The options --wanted-saves (-w) nor --key (-k) was found")
+            return
+        
+        pieces = ""
+        pcNum = -1
+        if args.pieces is not None:
+            pieces = "".join(args.pieces)
+        elif args.pc_num is not None:
+            pcNum = args.pc_num
+        else:
+            # didn't have the pieces nor a pc num
+            print("Syntax Error: The options --pieces (-p) nor --pc-num (-pc) was found")
+            return
+        
+        # options
+        filterFuncArgs["Path File"] = args.path
+        filterFuncArgs["Output File"] = args.output
+        filterFuncArgs["Print"] = args.print
+        filterFuncArgs["Solve"] = args.solve
+        filterFuncArgs["Tinyurl"] = args.tinyurl
+        filterFuncArgs["Fumen Code"] = args.fumen_code
+        
+        self.filter(wantedSaves, pieces, pcNum, filterFuncArgs)
+
+    # filter the path fumen's for the particular save
+    def filter(self, wantedSaves, pieces="", pcNum=-1, args={}):
+        defaultArgs = {
+            "Path File": self.pathFile,
+            "Output File": self.filterOutput,
+            "Solve": "minimal",
+            "Tinyurl": True,
+            "Fumen Code": False
+        }
+
+        if not os.path.exists(args["Path File"]):
+            print(f'The path to "{args["Path File"]}" could not be found!')
+            return
+
         pathFileLines = []
         fumenSet = set()
+        fumenAndQueue = {}
+
+        self.__filterGetData(pathFileLines, fumenSet, fumenAndQueue)
+        
+        # from pieces get the pieces given for the possible pieces in the last bag of the pc and it's length
+        lastBag, newBagNumUsed = self.__findLastBag(pieces, pcNum)
+
+        # main section
+        stack = self.__makeStack(wantedSaves.split(",")[0])
+        self.__filterFumensInPath(stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed)
+
+        with open(self.filteredPath, "w") as infile:
+            for line in pathFileLines:
+                infile.write(",".join(line) + "\n")
+        
+        if args["Solve"] != "None":
+            if args["Solve"] == "minimal":
+                self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"])
+            elif args["Solve"] == "unique":
+                self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"])
+            
+            if args["Print"]:
+                with open(args["Output File"], "r") as outfile:
+                    print(outfile.read())
+    
+    def __filterGetData(self, pathFileLines, fumenSet, fumenAndQueue):
         with open(self.pathFile, "r") as outfile:
-            headerLine = outfile.readline()
+            headerLine = outfile.readline().rstrip().split(",")
+            pathFileLines.append(headerLine)
             for line in outfile:
                 line = line.rstrip().split(",")
                 pathFileLines.append(line)
@@ -237,21 +333,16 @@ class Saves():
                     fumens = line[4].split(";")
                 else:
                     continue
-                fumenSet = fumenSet | set(fumens)
+                fumenSet.update(set(fumens))
         
-        fumenSet = list(fumenSet)
         os.system(f'node {self.fumenLabels} ' + " ".join(fumenSet))
         
-        fumenAndQueue = {}
         with open(self.scripts, "r") as outfile:
             for line, fumen in zip(outfile, fumenSet):
                 fumenAndQueue[fumen] = line.rstrip()
-        
-        # main section
-        pieces = self.getFromLastOutput("  ([TILJSZOP1-7!,\[\]^*]+)", self.logFile)[0]
-        lastBag, newBagNumUsed = self.__findLastBag(pieces)
-        stack = self.__makeStack(wantedSaves.split(",")[0])
-        for line in pathFileLines:
+
+    def __filterFumensInPath(self, stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed):
+        for line in pathFileLines[1:]:
             queue = self.tetrisSort(line[0])
             if line[4]:
                 fumens = line[4].split(";")
@@ -259,13 +350,16 @@ class Saves():
                 continue
             index = len(fumens) - 1
             while index >= 0:
-                # X at the end to make sure same length and that last piece must be the difference
-                label = self.tetrisSort(fumenAndQueue[fumens[index]]) + "X"
+                savePiece = ""
+                label = self.tetrisSort(fumenAndQueue[fumens[index]])
+                if len(label) < len(queue):
+                    # X at the end to make sure same length and that last piece must be the different
+                    label += "X"
                 for pieceL, pieceQ in zip(label, queue):
                     if pieceL != pieceQ:
                         savePiece = pieceQ
                         break
-                
+
                 bagSavePieces = lastBag - set(line[0][-newBagNumUsed:])
                 allSave = [self.tetrisSort("".join(savePiece) + "".join(bagSavePieces))]
                 if not self.parseStack(allSave, stack):
@@ -273,11 +367,73 @@ class Saves():
                 index -= 1
             line[4] = ";".join(fumens)
             line[1] = str(len(fumens))
+    
+    def true_minimal(self, pathFile="", output="", tinyurl=True, fumenCode=False):
+        if not pathFile:
+            pathFile = self.pathFile
+        if not output:
+            output = self.filterOutput
 
-        with open(self.pathFile, "w") as infile:
-            infile.write(headerLine)
-            for line in pathFileLines:
-                infile.write(",".join(line) + "\n")
+        os.system(f'sfinder-minimal {pathFile}')
+
+        with open("path_minimal_strict.md", "r") as trueMinFile:
+            allFumensLine = trueMinFile.readlines()[6]
+        fumenLst = re.findall("(v115@[a-zA-Z0-9?/+]*)", allFumensLine)
+
+        os.system(f'node {self.fumenCombine} ' + " ".join(fumenLst))
+
+        with open(self.scripts, "r") as outfile:
+            line = outfile.readline().rstrip()
+            if fumenCode:
+                fumenCode = re.search("(v115@[a-zA-Z0-9?/+]*)", line).group(0)
+        
+        if tinyurl:
+            try:
+                line = self.make_tiny(line)
+            except:
+                line = "Tinyurl did not accept fumen due to url length"
+        
+        with open(output, "w") as infile:
+            infile.write("True minimal: \n")
+            infile.write(line + "\n")
+            if fumenCode:
+                infile.write(fumenCode + "\n")
+    
+    def uniqueFromPath(self, pathFile="", output="", tinyurl=True, fumenCode=False):
+        if not pathFile:
+            pathFile = self.pathFile
+        if not output:
+            output = self.filterOutput
+
+        countSolve = {}
+        with open(pathFile, "r") as outfile:
+            outfile.readline()
+            for line in outfile:
+                fumens = line.rstrip().split(",")[-1]
+                for fumen in fumens.split(";"):
+                    if fumen not in countSolve:
+                        countSolve[fumen] = 1
+                    else:
+                        countSolve[fumen] += 1
+        countSolve = [fumen[0] for fumen in sorted(countSolve.items(), key=lambda x:x[1], reverse=True)]
+        os.system(f'node {self.fumenCombine} ' + " ".join(countSolve))
+
+        with open(self.scripts, "r") as outfile:
+            line = outfile.readline().rstrip()
+            if fumenCode or len(countSolve) > 128:
+                fumenCode = re.search("(v115@[a-zA-Z0-9?/+]*)", line).group(0)
+
+        if tinyurl:
+            try:
+                line = self.make_tiny(line)
+            except:
+                line = "Tinyurl did not accept fumen due to url length"
+        
+        with open(output, "w") as infile:
+            infile.write("Unique Solves Filtered: \n")
+            infile.write(line + "\n")
+            if fumenCode:
+                infile.write(fumenCode + "\n")
 
     def runBestSaves(self, pcNum, configs):
         if not self.checkFileExist(self.logFile):
@@ -340,7 +496,15 @@ class Saves():
         return bestSaves
 
     # determine the length of the last bag based on queue
-    def __findLastBag(self, pieces):
+    def __findLastBag(self, pieces, pcNum):
+        if not pieces:
+            if pcNum != -1:
+                lastBag = set(self.PIECES)
+                newBagNumUsed = (pcNum * 3) % 7 + 1
+                return set(lastBag), newBagNumUsed
+            else:
+                raise SyntaxError("One of pieces or pcNum must be filled out")
+
         if not re.match("[!1-7*]", pieces[-1]):
             raise SyntaxError("The pieces inputted doesn't end with a bag")
         
@@ -377,6 +541,20 @@ class Saves():
             newBagNumUsed = 1
 
         return set(lastBag), newBagNumUsed
+    
+    def make_tiny(self, url): 
+        import contextlib 
+    
+        try: 
+            from urllib.parse import urlencode           
+        
+        except ImportError: 
+            from urllib import urlencode 
+        from urllib.request import urlopen
+
+        request_url = ('http://tinyurl.com/api-create.php?' + urlencode({'url':url}))     
+        with contextlib.closing(urlopen(request_url)) as response:                       
+            return response.read().decode('utf-8 ')
     
     # finds all the saves and adds them to a list
     def __createAllSavesQ(self, savePieces, bagSavePieces, solveable=True):
@@ -588,30 +766,38 @@ class Saves():
 def runTestCases():
     s = Saves()
 
-    tests = open("testOutputs.txt", "r")
+    tests = open("resources/testOutputs.txt", "r")
 
-    s.handleParse(customInput=["percent", "-w", "/[OSZ]/", "-k", "2ndSaves", "-a", "-pc", "2", "-f", "output/testPath.csv", "-pr"])
+    s.handleParse(customInput=["percent", "-w", "/[OSZ]/", "-k", "2ndSaves", "-a", "-pc", "2", "-f", "resources/testPath2.csv", "-pr"])
     with open(s.percentOutput, "r") as outfile:
         for out in outfile.readlines():
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 1")
     
     tests.readline()
-    s.handleParse(customInput=["percent", "-w", "I", "-p", "*p7", "-fa", "-os", "-f", "output/testPath.csv", "-pr"])
+    s.handleParse(customInput=["percent", "-w", "I", "-p", "*p7", "-fa", "-os", "-f", "resources/testPath2.csv", "-pr"])
     with open(s.percentOutput, "r") as outfile:
         for out in outfile.readlines():
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 2")
 
     tests.readline()
-    s.handleParse(customInput=["percent", "-a", "-p", "*p7", "-fr", "-fa", "-os", "-f", "output/testPath.csv", "-pr"])
+    s.handleParse(customInput=["percent", "-a", "-p", "*p7", "-fr", "-fa", "-os", "-f", "resources/testPath2.csv", "-pr"])
     with open(s.percentOutput, "r") as outfile:
         for out in outfile.readlines():
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 3")
     
+    tests.readline()
+    s.handleParse(customInput=["filter", "-w", "/T.*[LJ].*$/", "-pc", "1", "-f", "resources/testPath1.csv", "-pr", "-t"])
+    with open(s.filterOutput, "r") as outfile:
+        for out in outfile.readlines():
+            assert out.rstrip() == tests.readline().rstrip()
+        print("Pass Test 4")
+
     tests.close()
 
 if __name__ == "__main__":
-    s = Saves()
-    s.handleParse()
+    #s = Saves()
+    #s.handleParse()
+    runTestCases()
