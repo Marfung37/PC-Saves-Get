@@ -2,9 +2,9 @@
 Extension of calculating saves based on knewjade's sfinder
 
 # Dependencies
-```pip3 install argparse``` - parser for command line 
-```npm install tetris-fumen``` - [fumen api](https://github.com/knewjade/tetris-fumen)
-```npm install -g sfinder-strict-minimal``` - [sfinder-strict-minimal](https://github.com/eight04/sfinder-strict-minimal)
+```pip3 install argparse``` - parser for command line  
+```npm install tetris-fumen``` - [fumen api](https://github.com/knewjade/tetris-fumen)  
+```npm install -g sfinder-strict-minimal``` - [sfinder-strict-minimal](https://github.com/eight04/sfinder-strict-minimal)  
 
 # Wanted Saves Format
 * ``I, LS, LSZ`` - does each wanted saves separately
