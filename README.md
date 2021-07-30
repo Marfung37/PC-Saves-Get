@@ -32,7 +32,7 @@ Extension of calculating saves based on knewjade's sfinder
 # Cmd Line Format
 ```python3 sfinder-saves [cmd] [options]```
 ## Commands
-### percent
+## percent
 Give the percent of saves based on the path file
 #### Options
 ``--wanted-save`` or ``-w`` - the save expression  
@@ -54,3 +54,25 @@ Give the percent of saves based on the path file
 ``--fraction`` or ``-fr`` - include the fraction along with the percent (default: true)  
 ``--fails`` or ``-fa`` - include the fail queues for saves in output (default: false)  
 ``--over-solves`` or ``-os`` - have the percents be saves/solves (default: false)  
+___
+## filter
+Filter path.csv of fumens that doesn't meet the wanted saves
+### Options
+``--wanted-save`` or ``-w`` - the save expression  
+``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
+
+  * Note: One of ``-w`` or ``-k`` is required to run filter  
+  * Note: It will always choose the first element to filter by in the wanted saves be it from ``-k`` or ``-w`` </ul>
+
+``--pieces`` or ``-p`` - pieces used on the setup  
+``--pc-num`` or ``-pc`` - pc num for setup & solve  
+
+  * Note: At least one of ``-p`` or ``-pc`` is required for percent  
+  * Note: If both ``-p`` and ``-pc`` is included, ``-p`` would take precedence </ul>
+
+``--path``  or ``-f`` - path file directory (default: output/path.csv)  
+``--output`` or ``-o`` - output file directory (default: output/saves.txt)  
+``--print`` or ``-pr`` - print out the output into the terminal (default: true)  
+``--solve`` or ``-s`` - setting for how to output solve (minimal, unique, None)(default: minimal)
+``--tinyurl`` or ``-t`` - output the link with tinyurl if possible (default: True)
+``--fumen-code`` or ``-fc`` - include the fumen code in the output (default: False)

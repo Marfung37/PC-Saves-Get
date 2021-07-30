@@ -32,7 +32,6 @@ class Saves():
         self.__setupPercentParser(subparsers)
         self.__setupFilterParser(subparsers)
     
-
     def __setupPercentParser(self, parser):
         percentParser = parser.add_parser("percent", help="Give the percents of saves using the path.csv file with wanted save expression")
         percentParser.set_defaults(func=self.__percentParse)
@@ -247,15 +246,18 @@ class Saves():
     def __filterParse(self, args):
         filterFuncArgs = {}
 
+        if args.wanted_saves == args.key == None:
+            # both -w and -k is inputted which doesn't make sense
+            print("Syntax Error: Both options --wanted-saves (-w) and --key (-k) was found for filter")
+            return
+
         # semi-required options
-        wantedSaves = []
         if args.wanted_saves is not None:
-            wantedSaves.extend(args.wanted_saves)
+            wantedSaves = args.wanted_saves[0].split(",")[0]
         if args.key is not None:
             with open(self.wantedSavesJSON, "r") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
-            wantedSaves.extend([",".join(wantedSaveDict[k]) for k in args.key])
-        wantedSaves = ",".join(wantedSaves)
+            wantedSaves = wantedSaveDict[args.key][0]
 
         if not wantedSaves:
             # didn't have the wanted-saves nor a key
@@ -284,7 +286,7 @@ class Saves():
         self.filter(wantedSaves, pieces, pcNum, filterFuncArgs)
 
     # filter the path fumen's for the particular save
-    def filter(self, wantedSaves, pieces="", pcNum=-1, args={}):
+    def filter(self, wantedSave, pieces="", pcNum=-1, args={}):
         defaultArgs = {
             "Path File": self.pathFile,
             "Output File": self.filterOutput,
@@ -301,13 +303,13 @@ class Saves():
         fumenSet = set()
         fumenAndQueue = {}
 
-        self.__filterGetData(pathFileLines, fumenSet, fumenAndQueue)
+        self.__filterGetData(args["Path File"], pathFileLines, fumenSet, fumenAndQueue)
         
         # from pieces get the pieces given for the possible pieces in the last bag of the pc and it's length
         lastBag, newBagNumUsed = self.__findLastBag(pieces, pcNum)
 
         # main section
-        stack = self.__makeStack(wantedSaves.split(",")[0])
+        stack = self.__makeStack(wantedSave)
         self.__filterFumensInPath(stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed)
 
         with open(self.filteredPath, "w") as infile:
@@ -324,8 +326,8 @@ class Saves():
                 with open(args["Output File"], "r") as outfile:
                     print(outfile.read())
     
-    def __filterGetData(self, pathFileLines, fumenSet, fumenAndQueue):
-        with open(self.pathFile, "r") as outfile:
+    def __filterGetData(self, pathFile, pathFileLines, fumenSet, fumenAndQueue):
+        with open(pathFile, "r") as outfile:
             headerLine = outfile.readline().rstrip().split(",")
             pathFileLines.append(headerLine)
             for line in outfile:
@@ -383,14 +385,14 @@ class Saves():
         combineP = subprocess.Popen(["node", self.fumenCombine] + fumenLst, stdout=subprocess.PIPE)
         fumenCombineOut = combineP.stdout.read().decode().rstrip()
         commentP = subprocess.Popen(["node", self.fumenComment, fumenCombineOut] + percents, stdout=subprocess.PIPE)
-        fumenLink = commentP.stdout.read().decode().rstrip()
+        line = commentP.stdout.read().decode().rstrip()
 
         if fumenCode:
             fumenCode = fumenCode[21:]
         
         if tinyurl:
             try:
-                line = self.make_tiny(fumenLink)
+                line = self.make_tiny(line)
             except:
                 line = "Tinyurl did not accept fumen due to url length"
         
@@ -433,14 +435,14 @@ class Saves():
         fumenCombineOut = combineP.stdout.read().decode().rstrip()
         # add the comments to each page of the coverage of that solve
         commentP = subprocess.Popen(["node", self.fumenComment, fumenCombineOut] + percents, stdout=subprocess.PIPE)
-        fumenLink = commentP.stdout.read().decode().rstrip()
+        line = commentP.stdout.read().decode().rstrip()
 
         if fumenCode or len(countSolve) > 128:
-            fumenCode = fumenLink[21:]
+            fumenCode = line[21:]
 
         if tinyurl:
             try:
-                line = self.make_tiny(fumenLink)
+                line = self.make_tiny(line)
             except:
                 line = "Tinyurl did not accept fumen due to url length"
         
@@ -785,28 +787,28 @@ def runTestCases():
 
     s.handleParse(customInput=["percent", "-w", "/[OSZ]/", "-k", "2ndSaves", "-a", "-pc", "2", "-f", "resources/testPath2.csv", "-pr"])
     with open(s.percentOutput, "r") as outfile:
-        for out in outfile.readlines():
+        for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 1")
     
     tests.readline()
     s.handleParse(customInput=["percent", "-w", "I", "-p", "*p7", "-fa", "-os", "-f", "resources/testPath2.csv", "-pr"])
     with open(s.percentOutput, "r") as outfile:
-        for out in outfile.readlines():
+        for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 2")
 
     tests.readline()
     s.handleParse(customInput=["percent", "-a", "-p", "*p7", "-fr", "-fa", "-os", "-f", "resources/testPath2.csv", "-pr"])
     with open(s.percentOutput, "r") as outfile:
-        for out in outfile.readlines():
+        for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 3")
     
     tests.readline()
     s.handleParse(customInput=["filter", "-w", "/T.*[LJ].*$/", "-pc", "1", "-f", "resources/testPath1.csv", "-pr", "-t"])
     with open(s.filterOutput, "r") as outfile:
-        for out in outfile.readlines():
+        for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 4")
 
@@ -814,5 +816,5 @@ def runTestCases():
 
 if __name__ == "__main__":
     s = Saves()
-    s.handleParse("filter -w T||O -pc 2 -s unique".split())
-    #runTestCases()
+    s.handleParse()
+    # runTestCases()
