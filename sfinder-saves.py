@@ -1,7 +1,9 @@
+from collections import Counter
 import argparse
 import os
 import re
 import json
+import subprocess
 
 class Saves():
     # constants
@@ -17,7 +19,7 @@ class Saves():
     wantedSavesJSON = "resources/wantedSavesMap.json"
     fumenLabels = "resources/fumenLabels.js"
     fumenCombine = "resources/fumenCombine.js"
-    scripts = "resources/scriptsOutput.txt"
+    fumenComment = "resources/fumenAddComment.js"
     bestSave = "bestSaves/"
 
     def __init__(self):
@@ -89,7 +91,7 @@ class Saves():
         pieces = ""
         pcNum = -1
         if args.pieces is not None:
-            pieces = "".join(args.pieces)
+            pieces = "".join(args.pieces).upper()
         elif args.pc_num is not None:
             pcNum = args.pc_num
         else:
@@ -263,7 +265,7 @@ class Saves():
         pieces = ""
         pcNum = -1
         if args.pieces is not None:
-            pieces = "".join(args.pieces)
+            pieces = "".join(args.pieces).upper()
         elif args.pc_num is not None:
             pcNum = args.pc_num
         else:
@@ -335,36 +337,26 @@ class Saves():
                     continue
                 fumenSet.update(set(fumens))
         
-        os.system(f'node {self.fumenLabels} ' + " ".join(fumenSet))
+        labelP = subprocess.Popen(["node", self.fumenLabels] + list(fumenSet), stdout=subprocess.PIPE)
+        labels = labelP.stdout.read().decode().rstrip().split("\n")
         
-        with open(self.scripts, "r") as outfile:
-            for line, fumen in zip(outfile, fumenSet):
-                fumenAndQueue[fumen] = line.rstrip()
+        for label, fumen in zip(labels, fumenSet):
+            fumenAndQueue[fumen] = label
 
     def __filterFumensInPath(self, stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed):
         for line in pathFileLines[1:]:
-            queue = self.tetrisSort(line[0])
+            queue = Counter(line[0])
             if line[4]:
                 fumens = line[4].split(";")
             else:
                 continue
-            index = len(fumens) - 1
-            while index >= 0:
-                savePiece = ""
-                label = self.tetrisSort(fumenAndQueue[fumens[index]])
-                if len(label) < len(queue):
-                    # X at the end to make sure same length and that last piece must be the different
-                    label += "X"
-                for pieceL, pieceQ in zip(label, queue):
-                    if pieceL != pieceQ:
-                        savePiece = pieceQ
-                        break
+            for i in range(len(fumens)-1, -1, -1):
+                savePiece = queue - Counter(fumenAndQueue[fumens[i]])
 
                 bagSavePieces = lastBag - set(line[0][-newBagNumUsed:])
                 allSave = [self.tetrisSort("".join(savePiece) + "".join(bagSavePieces))]
                 if not self.parseStack(allSave, stack):
-                    fumens.pop(index)
-                index -= 1
+                    fumens.pop(i)
             line[4] = ";".join(fumens)
             line[1] = str(len(fumens))
     
@@ -377,27 +369,36 @@ class Saves():
         os.system(f'sfinder-minimal {pathFile}')
 
         with open("path_minimal_strict.md", "r") as trueMinFile:
-            allFumensLine = trueMinFile.readlines()[6]
-        fumenLst = re.findall("(v115@[a-zA-Z0-9?/+]*)", allFumensLine)
+            trueMinLines = trueMinFile.readlines()
+        
+        totalCases = int(re.search("/ (\d+)\)", trueMinLines[2]).group(1))
+        percents = []
+        for line in trueMinLines[13::9]:
+            numCoverCases = int(re.match("(\d+)", line).group(1))
+            percent = numCoverCases / totalCases * 100
+            percent = f'{percent:.2f}% ({numCoverCases}/{totalCases})'
+            percents.append(percent)
+        fumenLst = re.findall("(v115@[a-zA-Z0-9?/+]*)", trueMinLines[6])
 
-        os.system(f'node {self.fumenCombine} ' + " ".join(fumenLst))
+        combineP = subprocess.Popen(["node", self.fumenCombine] + fumenLst, stdout=subprocess.PIPE)
+        fumenCombineOut = combineP.stdout.read().decode().rstrip()
+        commentP = subprocess.Popen(["node", self.fumenComment, fumenCombineOut] + percents, stdout=subprocess.PIPE)
+        fumenLink = commentP.stdout.read().decode().rstrip()
 
-        with open(self.scripts, "r") as outfile:
-            line = outfile.readline().rstrip()
-            if fumenCode:
-                fumenCode = re.search("(v115@[a-zA-Z0-9?/+]*)", line).group(0)
+        if fumenCode:
+            fumenCode = fumenCode[21:]
         
         if tinyurl:
             try:
-                line = self.make_tiny(line)
+                line = self.make_tiny(fumenLink)
             except:
                 line = "Tinyurl did not accept fumen due to url length"
         
         with open(output, "w") as infile:
             infile.write("True minimal: \n")
-            infile.write(line + "\n")
+            infile.write(line)
             if fumenCode:
-                infile.write(fumenCode + "\n")
+                infile.write("\n" + fumenCode)
     
     def uniqueFromPath(self, pathFile="", output="", tinyurl=True, fumenCode=False):
         if not pathFile:
@@ -408,32 +409,46 @@ class Saves():
         countSolve = {}
         with open(pathFile, "r") as outfile:
             outfile.readline()
-            for line in outfile:
+            for totalCases, line in enumerate(outfile):
                 fumens = line.rstrip().split(",")[-1]
-                for fumen in fumens.split(";"):
-                    if fumen not in countSolve:
-                        countSolve[fumen] = 1
-                    else:
-                        countSolve[fumen] += 1
-        countSolve = [fumen[0] for fumen in sorted(countSolve.items(), key=lambda x:x[1], reverse=True)]
-        os.system(f'node {self.fumenCombine} ' + " ".join(countSolve))
+                if fumens:
+                    for fumen in fumens.split(";"):
+                        if fumen not in countSolve:
+                            countSolve[fumen] = 1
+                        else:
+                            countSolve[fumen] += 1
+        
+        totalCases += 1
+        countSolve = sorted(countSolve.items(), key=lambda x:x[1], reverse=True)
+        solves = []
+        percents = []
+        for fumen, count in countSolve:
+            # add the fumen codes and percents to separate lists
+            percent = count / totalCases * 100
+            percents.append(f"{percent:.2f}% ({count}/{totalCases})")
+            solves.append(fumen)
+        
+        # combine the fumen codes of the solves
+        combineP = subprocess.Popen(["node", self.fumenCombine] + solves, stdout=subprocess.PIPE)
+        fumenCombineOut = combineP.stdout.read().decode().rstrip()
+        # add the comments to each page of the coverage of that solve
+        commentP = subprocess.Popen(["node", self.fumenComment, fumenCombineOut] + percents, stdout=subprocess.PIPE)
+        fumenLink = commentP.stdout.read().decode().rstrip()
 
-        with open(self.scripts, "r") as outfile:
-            line = outfile.readline().rstrip()
-            if fumenCode or len(countSolve) > 128:
-                fumenCode = re.search("(v115@[a-zA-Z0-9?/+]*)", line).group(0)
+        if fumenCode or len(countSolve) > 128:
+            fumenCode = fumenLink[21:]
 
         if tinyurl:
             try:
-                line = self.make_tiny(line)
+                line = self.make_tiny(fumenLink)
             except:
                 line = "Tinyurl did not accept fumen due to url length"
         
         with open(output, "w") as infile:
             infile.write("Unique Solves Filtered: \n")
-            infile.write(line + "\n")
+            infile.write(line)
             if fumenCode:
-                infile.write(fumenCode + "\n")
+                infile.write("\n" + fumenCode)
 
     def runBestSaves(self, pcNum, configs):
         if not self.checkFileExist(self.logFile):
@@ -509,7 +524,7 @@ class Saves():
             raise SyntaxError("The pieces inputted doesn't end with a bag")
         
         # what kind of bag is the last part
-        lastPartPieces = re.findall("\[?([\^tiljszoTILJSZO*]+)\]?P?[1-7!]?", pieces)
+        lastPartPieces = re.findall("\[?([\^tiljszoTILJSZO*]+)\]?P?[1-7!]?", pieces.split(",")[-1])
         if lastPartPieces:
             lastPartPieces[-1]
         else:
@@ -799,5 +814,5 @@ def runTestCases():
 
 if __name__ == "__main__":
     s = Saves()
-    s.handleParse()
+    s.handleParse("filter -w T||O -pc 2 -s unique".split())
     #runTestCases()

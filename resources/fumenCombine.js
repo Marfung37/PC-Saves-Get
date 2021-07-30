@@ -1,14 +1,12 @@
-const fs = require("fs");
 const {encoder, decoder} = require('tetris-fumen');
 
-var fumenCodes = process.argv.slice(2)
 var pages = [];
-for(let code of fumenCodes){
-    page = decoder.decode(code)[0];
-    pages.push({field: page.field});
-}
-fumenLink = "https://fumen.zui.jp/?" + encoder.encode(pages)
+var fumenCodes = process.argv.slice(2)
 
-fs.writeFile("resources/scriptsOutput.txt", fumenLink, function(err){
-    if (err) return console.log(err);
-});
+for(let code of fumenCodes){
+    field = decoder.decode(code)[0].field;
+    pages.push({field: field});
+}
+fumenLink = "https://fumen.zui.jp/?" + encoder.encode(pages);
+
+console.log(fumenLink);
