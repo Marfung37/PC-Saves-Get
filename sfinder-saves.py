@@ -57,7 +57,7 @@ class Saves():
         filterParser.add_argument("-f", "--path", help="path file directory (default: output/path.csv)", metavar="<directory>", default=self.pathFile, type=str)
         filterParser.add_argument("-o", "--output", help="output file directory (default: output/filteredSolves)", metavar="<directory>", default=self.filterOutput, type=str)
         filterParser.add_argument("-pr", "--print", help="log to terminal (default: True)", action="store_false")
-        filterParser.add_argument("-s", "--solve", help="setting for how to output solve (minimal, unique, None)(default: minimal)", choices={"minimal", "unique", "None"}, metavar="<string>", default="minimal", type=str)
+        filterParser.add_argument("-s", "--solve", help="setting for how to output solve (minimal, unique, none)(default: minimal)", choices={"minimal", "unique", "none"}, metavar="<string>", default="minimal", type=str)
         filterParser.add_argument("-t", "--tinyurl", help="output the link with tinyurl if possible (default: True)", action="store_false")
         filterParser.add_argument("-fc", "--fumen-code", help="include the fumen code in the output (default: False)", action="store_true")
 
@@ -246,7 +246,7 @@ class Saves():
     def __filterParse(self, args):
         filterFuncArgs = {}
 
-        if args.wanted_saves == args.key == None:
+        if not args.wanted_saves == args.key == None:
             # both -w and -k is inputted which doesn't make sense
             print("Syntax Error: Both options --wanted-saves (-w) and --key (-k) was found for filter")
             return
