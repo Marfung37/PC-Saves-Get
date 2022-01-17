@@ -526,10 +526,8 @@ class Saves():
             raise SyntaxError("The pieces inputted doesn't end with a bag")
         
         # what kind of bag is the last part
-        lastPartPieces = re.findall("\[?([\^tiljszoTILJSZO*]+)\]?P?[1-7!]?", pieces.split(",")[-1])
-        if lastPartPieces:
-            lastPartPieces[-1]
-        else:
+        lastPartPieces = re.findall("\[?([\^tiljszoTILJSZO*]+)\]?P?[1-7!]?", pieces.split(",")[-1])[0]
+        if not lastPartPieces:
             raise SyntaxError("The pieces inputted doesn't end with a bag")
         
         # number of pieces used in the next bag
