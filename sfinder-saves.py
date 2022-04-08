@@ -138,6 +138,12 @@ class Saves():
 
         if wantedSaves:
             for wantedSave in wantedSaves.split(","):
+                if "#" in wantedSave:
+                    wantedSave =  wantedSave.split("#")
+                    alias = wantedSave[1]
+                    wantedSave =  wantedSave[0]
+                else:
+                    alias = wantedSave
                 countWanted[wantedSave] = 0
                 wantedStacks.append(self.__makeStack(wantedSave))
 
