@@ -35,7 +35,7 @@ Extension of calculating saves based on knewjade's sfinder
 ```python3 sfinder-saves.py [cmd] [options]```
 ## Commands
 ## percent
-Give the percent of saves based on the path file
+Gives the save percentage
 #### Options
 ``--wanted-save`` or ``-w`` - the save expression  
 ``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
@@ -58,7 +58,7 @@ Give the percent of saves based on the path file
 ``--over-solves`` or ``-os`` - have the percents be saves/solves (default: false)  
 ___
 ## filter
-Filter path.csv of fumens that doesn't meet the wanted saves
+Filter path.csv for only solves that meet the wanted saves and outputs the solves
 ### Options
 ``--wanted-save`` or ``-w`` - the save expression  
 ``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
