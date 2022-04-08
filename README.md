@@ -32,7 +32,7 @@ Extension of calculating saves based on knewjade's sfinder
     * Note: this is necessary for the full potential of wanted saves expressions
 
 # Cmd Line Format
-```python3 sfinder-saves [cmd] [options]```
+```python3 sfinder-saves.py [cmd] [options]```
 ## Commands
 ## percent
 Give the percent of saves based on the path file
