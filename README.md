@@ -2,7 +2,7 @@
 Extension of calculating saves based on knewjade's sfinder
 
 # Dependencies
-```pip3 install argparse``` - parser for command line  
+```pip install argparse``` - parser for command line  
 ```npm install tetris-fumen``` - [fumen api](https://github.com/knewjade/tetris-fumen)  
 ```npm install -g sfinder-strict-minimal``` - [sfinder-strict-minimal](https://github.com/eight04/sfinder-strict-minimal)  
 
@@ -25,7 +25,7 @@ Extension of calculating saves based on knewjade's sfinder
 * ``LSZ`` - queue, all of L,S,Z are in at least one of the saves
     * matches ``[LSZO, TSZO] [TLSZ, LLSZ]``
     * fails ``[L, S, Z] [TSZ, JSZ]``
-* ``/^[^T]\*L[^J]\*$/`` - regex queue, a regex expression in ``//``: at least one save has L but not T nor J
+* ``/^[^T]*L[^J]*$/`` - regex queue, a regex expression in ``//``: at least one save has L but not T nor J
     * matches ``[ILSZ, IJSZ] [LL]``
     * fails ``[TLSZ] [LJSZ]``
     * the order of saves always follow TILJSZO
