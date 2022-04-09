@@ -30,7 +30,7 @@ Extension of calculating saves based on knewjade's sfinder
     * fails ``[TLSZ] [LJSZ]``
     * the order of saves always follow TILJSZO
     * Note: this is necessary for the full potential of wanted saves expressions
-
+* ``/T[^T]/#one T`` - add ``#`` with text to label the expression
 # Cmd Line Format
 ```python3 sfinder-saves.py [cmd] [options]```
 ## Commands

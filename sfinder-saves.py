@@ -74,7 +74,8 @@ class Saves():
         # semi-required options
         wantedSaves = []
         if args.wanted_saves is not None:
-            wantedSaves.extend(args.wanted_saves)
+            # remove white spaces and add to list
+            wantedSaves.extend(args.wanted_save.split())
         if args.key is not None:
             with open(self.wantedSavesJSON, "r") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
@@ -144,7 +145,7 @@ class Saves():
                     wantedSave =  wantedSave[0]
                 else:
                     alias = wantedSave
-                countWanted[wantedSave] = 0
+                countWanted[alias] = 0
                 wantedStacks.append(self.__makeStack(wantedSave))
 
         # from pieces get the pieces given for the possible pieces in the last bag of the pc and it's length
@@ -252,7 +253,7 @@ class Saves():
     def __filterParse(self, args):
         filterFuncArgs = {}
 
-        if not args.wanted_saves == args.key == None:
+        if args.wanted_saves and args.key:
             # both -w and -k is inputted which doesn't make sense
             print("Syntax Error: Both options --wanted-saves (-w) and --key (-k) was found for filter")
             return
@@ -263,7 +264,7 @@ class Saves():
         if args.key is not None:
             with open(self.wantedSavesJSON, "r") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
-            wantedSaves = wantedSaveDict[args.key][0]
+            wantedSaves = wantedSaveDict[args.key[0]][0]
 
         if not wantedSaves:
             # didn't have the wanted-saves nor a key
@@ -315,7 +316,8 @@ class Saves():
         lastBag, newBagNumUsed = self.__findLastBag(pieces, pcNum)
 
         # main section
-        stack = self.__makeStack(wantedSave)
+        alias = wantedSave.split("#")[1]
+        stack = self.__makeStack(wantedSave.split("#")[0])
         self.__filterFumensInPath(stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed)
 
         with open(self.filteredPath, "w") as infile:
@@ -324,9 +326,9 @@ class Saves():
         
         if args["Solve"] != "None":
             if args["Solve"] == "minimal":
-                self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"])
+                self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], alias)
             elif args["Solve"] == "unique":
-                self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"])
+                self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], alias)
             
             if args["Print"]:
                 with open(args["Output File"], "r") as outfile:
@@ -368,7 +370,7 @@ class Saves():
             line[4] = ";".join(fumens)
             line[1] = str(len(fumens))
     
-    def true_minimal(self, pathFile="", output="", tinyurl=True, fumenCode=False):
+    def true_minimal(self, pathFile="", output="", tinyurl=True, fumenCode=False, alias="None"):
         if not pathFile:
             pathFile = self.pathFile
         if not output:
@@ -403,12 +405,12 @@ class Saves():
                 line = "Tinyurl did not accept fumen due to url length"
         
         with open(output, "w") as infile:
-            infile.write("True minimal: \n")
+            infile.write(f"True minimal for {alias}: \n")
             infile.write(line)
             if fumenCode:
                 infile.write("\n" + fumenCode)
     
-    def uniqueFromPath(self, pathFile="", output="", tinyurl=True, fumenCode=False):
+    def uniqueFromPath(self, pathFile="", output="", tinyurl=True, fumenCode=False, alias="None"):
         if not pathFile:
             pathFile = self.pathFile
         if not output:
@@ -453,7 +455,7 @@ class Saves():
                 line = "Tinyurl did not accept fumen due to url length"
         
         with open(output, "w") as infile:
-            infile.write("Unique Solves Filtered: \n")
+            infile.write(f"Unique Solves Filtered for {alias}: \n")
             infile.write(line)
             if fumenCode:
                 infile.write("\n" + fumenCode)
@@ -538,7 +540,6 @@ class Saves():
         
         # number of pieces used in the next bag
         newBagNumUsed = pieces[-1]
-            
 
         # turn the piece input into data for determining saves
         if lastPartPieces[0] == "*":
