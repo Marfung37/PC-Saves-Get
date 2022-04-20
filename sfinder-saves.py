@@ -13,7 +13,7 @@ class Saves():
     pathFile = "output/path.csv"
     percentOutput = "output/savesPercent.txt"
 
-    filteredPath = "resources/filteredPath.txt"
+    filteredPath = "resources/filteredPath.csv"
     filterOutput = "output/filteredSolves.txt"
 
     wantedSavesJSON = "resources/wantedSavesMap.json"
@@ -52,6 +52,7 @@ class Saves():
         filterParser.set_defaults(func=self.__filterParse)
         filterParser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
         filterParser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
+        filterParser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default=0)", default=0, metavar="<int>", type=int)
         filterParser.add_argument("-p", "--pieces", help="pieces used on the setup (required unless there's -pc)", metavar="<string>", nargs='+')
         filterParser.add_argument("-pc", "--pc-num", help="pc num for the setup & solve (required unless there's -p)", metavar="<int>", type=int)
         filterParser.add_argument("-f", "--path", help="path file directory (default: output/path.csv)", metavar="<directory>", default=self.pathFile, type=str)
@@ -259,18 +260,26 @@ class Saves():
             return
 
         # semi-required options
+        index = args.index
         if args.wanted_saves is not None:
-            wantedSaves = args.wanted_saves[0].split(",")[0]
+            wantedSaves = args.wanted_saves[0].split(",")
         if args.key is not None:
             with open(self.wantedSavesJSON, "r") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
-            wantedSaves = wantedSaveDict[args.key[0]][0]
+            wantedSaves = wantedSaveDict[args.key[0]]
 
         if not wantedSaves:
             # didn't have the wanted-saves nor a key
             print("Syntax Error: The options --wanted-saves (-w) nor --key (-k) was found")
             return
         
+        if index >= len(wantedSaves):
+            # index given was out of range
+            print("OutOfBounds: The option index is out of bounds of possible wantedsaves expressions")
+            return
+        
+        wantedSaves = wantedSaves[index]
+
         pieces = ""
         pcNum = -1
         if args.pieces is not None:
