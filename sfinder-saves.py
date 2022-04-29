@@ -840,5 +840,5 @@ def runTestCases():
 
 if __name__ == "__main__":
     s = Saves()
-    #s.handleParse()
-    runTestCases()
+    s.handleParse()
+    #runTestCases()
