@@ -62,6 +62,7 @@ Filter path.csv for only solves that meet the wanted saves and outputs the solve
 ### Options
 ``--wanted-save`` or ``-w`` - the save expression  
 ``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
+``--index`` or ``-i`` - index which expression of list of expressions in ``-w`` or ``-k``
 
   * Note: One of ``-w`` or ``-k`` is required to run filter  
   * Note: It will always choose the first element to filter by in the wanted saves be it from ``-k`` or ``-w`` </ul>
