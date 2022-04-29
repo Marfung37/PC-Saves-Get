@@ -75,8 +75,8 @@ class Saves():
         # semi-required options
         wantedSaves = []
         if args.wanted_saves is not None:
-            # remove white spaces and add to list
-            wantedSaves.extend(args.wanted_save.split())
+            # add all wanted saves
+            wantedSaves.extend(args.wanted_saves)
         if args.key is not None:
             with open(self.wantedSavesJSON, "r") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
@@ -325,8 +325,12 @@ class Saves():
         lastBag, newBagNumUsed = self.__findLastBag(pieces, pcNum)
 
         # main section
-        alias = wantedSave.split("#")[1]
-        stack = self.__makeStack(wantedSave.split("#")[0])
+        if "#" in wantedSave:
+            alias = wantedSave.split("#")[1]
+            wantedSave = wantedSave.split("#")[0]
+        else:
+            alias = wantedSave
+        stack = self.__makeStack(wantedSave)
         self.__filterFumensInPath(stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed)
 
         with open(self.filteredPath, "w") as infile:
@@ -799,7 +803,7 @@ def runTestCases():
 
     tests = open("resources/testOutputs.txt", "r")
 
-    s.handleParse(customInput=["percent", "-w", "/[OSZ]/", "-k", "2ndSaves", "-a", "-pc", "2", "-f", "resources/testPath2.csv", "-pr"])
+    s.handleParse(customInput=["percent", "-w", "/[OSZ]/#O/S/Z", "-k", "2nd Saves", "-a", "-pc", "2", "-f", "resources/testPath2.csv", "-pr"])
     with open(s.percentOutput, "r") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
@@ -828,7 +832,13 @@ def runTestCases():
 
     tests.close()
 
+    # clean up
+    open(s.filterOutput, "w").close()
+    open(s.percentOutput, "w").close()
+    os.remove("resources/filteredPath.csv")
+    os.remove("path_minimal_strict.md")
+
 if __name__ == "__main__":
     s = Saves()
-    s.handleParse()
-    # runTestCases()
+    #s.handleParse()
+    runTestCases()
