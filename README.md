@@ -50,6 +50,7 @@ Gives the save percentage
   * Note: At least one of ``-p`` or ``-pc`` is required for percent  
   * Note: If both ``-p`` and ``-pc`` is included, ``-p`` would take precedence </ul>
 
+``--best-save`` or ``-bs`` - enable best save where first wantedSave is priority and second and so on  
 ``--path``  or ``-f`` - path file directory (default: output/path.csv)  
 ``--output`` or ``-o`` - output file directory (default: output/saves.txt)  
 ``--print`` or ``-pr`` - print out the output into the terminal (default: true)  
@@ -62,7 +63,7 @@ Filter path.csv for only solves that meet the wanted saves and outputs the solve
 ### Options
 ``--wanted-save`` or ``-w`` - the save expression  
 ``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
-``--index`` or ``-i`` - index which expression of list of expressions in ``-w`` or ``-k``
+``--index`` or ``-i`` - index or index ranges in ``-w`` or ``-k``
 
   * Note: One of ``-w`` or ``-k`` is required to run filter  
   * Note: It will always choose the first element to filter by in the wanted saves be it from ``-k`` or ``-w`` </ul>
@@ -73,6 +74,7 @@ Filter path.csv for only solves that meet the wanted saves and outputs the solve
   * Note: At least one of ``-p`` or ``-pc`` is required for percent  
   * Note: If both ``-p`` and ``-pc`` is included, ``-p`` would take precedence </ul>
 
+``--best-save`` or ``-bs`` - enable best save where first wantedSave is priority and second and so on  
 ``--path``  or ``-f`` - path file directory (default: output/path.csv)  
 ``--output`` or ``-o`` - output file directory (default: output/saves.txt)  
 ``--print`` or ``-pr`` - print out the output into the terminal (default: true)  

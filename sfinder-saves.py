@@ -38,6 +38,7 @@ class Saves():
         percentParser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
         percentParser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
         percentParser.add_argument("-a", "--all", help="output all of the saves and corresponding percents (alternative to not having -k nor -w)", action="store_true")
+        percentParser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
         percentParser.add_argument("-p", "--pieces", help="pieces used on the setup (required unless there's -pc)", metavar="<string>", nargs='+')
         percentParser.add_argument("-pc", "--pc-num", help="pc num for the setup & solve (required unless there's -p)", metavar="<int>", type=int)
         percentParser.add_argument("-f", "--path", help="path file directory (default: output/path.csv)", metavar="<directory>", default=self.pathFile, type=str)
@@ -52,7 +53,8 @@ class Saves():
         filterParser.set_defaults(func=self.__filterParse)
         filterParser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
         filterParser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
-        filterParser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default=0)", default=0, metavar="<int>", type=int)
+        filterParser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
+        filterParser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default='')", default=None, metavar="<string>", nargs='*')
         filterParser.add_argument("-p", "--pieces", help="pieces used on the setup (required unless there's -pc)", metavar="<string>", nargs='+')
         filterParser.add_argument("-pc", "--pc-num", help="pc num for the setup & solve (required unless there's -p)", metavar="<int>", type=int)
         filterParser.add_argument("-f", "--path", help="path file directory (default: output/path.csv)", metavar="<directory>", default=self.pathFile, type=str)
@@ -86,7 +88,11 @@ class Saves():
 
         if not wantedSaves and not args.all:
             # didn't have the wanted-saves nor a key
-            print("Syntax Error: The options --wanted-saves (-w) nor --key (-k) was found")
+            print("Syntax Error: The options --wanted-saves (-w), --key (-k) nor --all (-a) was found")
+            return
+        if not wantedSaves and args.best_save:
+            # didn't have -w or -k but have -bs true
+            print("Syntax Error: The options --wanted-saves (-w) nor --key (-k) was found when --best-save (-bs) is true")
             return
         
         pieces = ""
@@ -101,6 +107,7 @@ class Saves():
             return
         
         # options
+        percentFuncArgs["Best Save"] = args.best_save
         percentFuncArgs["Path File"] = args.path
         percentFuncArgs["Output File"] = args.output
         percentFuncArgs["Print"] = args.print
@@ -117,6 +124,7 @@ class Saves():
             "Output File": self.percentOutput,
             "Print": True,
             "All Saves": False,
+            "Best Save": False,
             "Fraction": True,
             "Fails": False,
             "Over Solves": False
@@ -193,6 +201,9 @@ class Saves():
                 for stack, wantedSave in zip(wantedStacks, countWanted):
                     if(self.parseStack(allSaves, stack)):
                         countWanted[wantedSave] += 1
+                        if args["Best Save"]:
+                            # best save will not consider any further stack
+                            break
                     else:
                         if args["Fails"]:
                             if wantedSave not in wantedSavesFails:
@@ -259,26 +270,46 @@ class Saves():
             print("Syntax Error: Both options --wanted-saves (-w) and --key (-k) was found for filter")
             return
 
-        # semi-required options
-        index = args.index
+        # handle index parameter
+        if args.index is None:
+            indexRanges = []
+        else:
+            indexRanges = (','.join(args.index)).split(',')
+        
+        newIndexRanges = []
+        for part in indexRanges:
+            part = part.split("-")
+            if len(part) <= 2:
+                newIndexRanges.append((part[0], part[0] if len(part) == 1 else part[1]))
+            else:
+                print("Syntax Error: incorrect format in --index (-i)")
+                return
+
+        # handle wanted saves input
         if args.wanted_saves is not None:
-            wantedSaves = args.wanted_saves[0].split(",")
-        if args.key is not None:
+            wantedSaves = ",".join(args.wanted_saves).split(",")
+        elif args.key is not None:
             with open(self.wantedSavesJSON, "r") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
-            wantedSaves = wantedSaveDict[args.key[0]]
-
+            wantedSaves = ",".join(wantedSaveDict[args.key]).split(",")
+        
         if not wantedSaves:
             # didn't have the wanted-saves nor a key
             print("Syntax Error: The options --wanted-saves (-w) nor --key (-k) was found")
             return
         
-        if index >= len(wantedSaves):
-            # index given was out of range
-            print("OutOfBounds: The option index is out of bounds of possible wantedsaves expressions")
-            return
-        
-        wantedSaves = wantedSaves[index]
+        if not args.best_save:
+            wantedSaves = [wantedSaves[0]]
+
+        # apply index ranges to wanted saves
+        newWantedSaves = [] if newIndexRanges else wantedSaves
+        for start, end in newIndexRanges:
+            if 0 <= start < len(wantedSaves) and 0 <= end < len(wantedSaves) and start <= end:
+                newWantedSaves.extend[wantedSaves[start, end]]
+            else:
+                # index given was out of range
+                print("OutOfBounds: The option index is out of bounds of possible wantedsaves expressions")
+                return
 
         pieces = ""
         pcNum = -1
@@ -299,61 +330,76 @@ class Saves():
         filterFuncArgs["Tinyurl"] = args.tinyurl
         filterFuncArgs["Fumen Code"] = args.fumen_code
         
-        self.filter(wantedSaves, pieces, pcNum, filterFuncArgs)
+        self.filter(newWantedSaves, pieces, pcNum, filterFuncArgs)
 
     # filter the path fumen's for the particular save
-    def filter(self, wantedSave, pieces="", pcNum=-1, args={}):
+    def filter(self, wantedSaves, pieces="", pcNum=-1, args={}):
         defaultArgs = {
             "Path File": self.pathFile,
             "Output File": self.filterOutput,
             "Solve": "minimal",
             "Tinyurl": True,
-            "Fumen Code": False
+            "Fumen Code": False,
+            "Print": True
         }
+        defaultArgs.update(args)
+        args = defaultArgs
 
         if not os.path.exists(args["Path File"]):
             print(f'The path to "{args["Path File"]}" could not be found!')
             return
 
         pathFileLines = []
+        linesMatched = []
         fumenSet = set()
         fumenAndQueue = {}
 
-        self.__filterGetData(args["Path File"], pathFileLines, fumenSet, fumenAndQueue)
+        self.__filterGetData(args["Path File"], pathFileLines, fumenSet, fumenAndQueue, linesMatched)
         
         # from pieces get the pieces given for the possible pieces in the last bag of the pc and it's length
         lastBag, newBagNumUsed = self.__findLastBag(pieces, pcNum)
 
         # main section
-        if "#" in wantedSave:
-            alias = wantedSave.split("#")[1]
-            wantedSave = wantedSave.split("#")[0]
-        else:
-            alias = wantedSave
-        stack = self.__makeStack(wantedSave)
-        self.__filterFumensInPath(stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed)
+        aliases = []
+        for wantedSave in wantedSaves:
+            if "#" in wantedSave:
+                aliases.append(wantedSave.split("#")[1])
+                wantedSave = wantedSave.split("#")[0]
+            else:
+                aliases.append(wantedSave)
+            stack = self.__makeStack(wantedSave)
+            self.__filterFumensInPath(stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed, linesMatched)
+
+        # for every line not matched is emptied
+        for i in range(len(linesMatched)):
+            if not linesMatched[i]:
+                line = pathFileLines[i+1]
+                line[-1] = ""
+                line[1] = "0"
+                pathFileLines[i+1] = line
 
         with open(self.filteredPath, "w") as infile:
             for line in pathFileLines:
                 infile.write(",".join(line) + "\n")
-        
+            
         if args["Solve"] != "None":
             if args["Solve"] == "minimal":
-                self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], alias)
+                self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], aliases)
             elif args["Solve"] == "unique":
-                self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], alias)
+                self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], aliases)
             
             if args["Print"]:
                 with open(args["Output File"], "r") as outfile:
                     print(outfile.read())
     
-    def __filterGetData(self, pathFile, pathFileLines, fumenSet, fumenAndQueue):
+    def __filterGetData(self, pathFile, pathFileLines, fumenSet, fumenAndQueue, linesMatched):
         with open(pathFile, "r") as outfile:
             headerLine = outfile.readline().rstrip().split(",")
             pathFileLines.append(headerLine)
             for line in outfile:
                 line = line.rstrip().split(",")
                 pathFileLines.append(line)
+                linesMatched.append(False)
                 if line[4]:
                     fumens = line[4].split(";")
                 else:
@@ -366,24 +412,28 @@ class Saves():
         for label, fumen in zip(labels, fumenSet):
             fumenAndQueue[fumen] = label
 
-    def __filterFumensInPath(self, stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed):
-        for line in pathFileLines[1:]:
-            queue = Counter(line[0])
-            if line[4]:
-                fumens = line[4].split(";")
-            else:
-                continue
-            for i in range(len(fumens)-1, -1, -1):
-                savePiece = queue - Counter(fumenAndQueue[fumens[i]])
+    def __filterFumensInPath(self, stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed, linesMatched):
+        for i, line in enumerate(pathFileLines[1:]):
+            if not linesMatched[i]:
+                queue = Counter(line[0])
+                if line[4]:
+                    fumens = line[4].split(";")
+                else:
+                    continue
+                matchedFumens = []
+                for fumen in fumens:
+                    savePiece = queue - Counter(fumenAndQueue[fumen])
 
-                bagSavePieces = lastBag - set(line[0][-newBagNumUsed:])
-                allSave = [self.tetrisSort("".join(savePiece) + "".join(bagSavePieces))]
-                if not self.parseStack(allSave, stack):
-                    fumens.pop(i)
-            line[4] = ";".join(fumens)
-            line[1] = str(len(fumens))
+                    bagSavePieces = lastBag - set(line[0][-newBagNumUsed:])
+                    allSaves = [self.tetrisSort("".join(savePiece) + "".join(bagSavePieces))]
+                    if self.parseStack(allSaves, stack):
+                        matchedFumens.append(fumen)
+                        linesMatched[i] = True
+                if matchedFumens:
+                    line[4] = ";".join(matchedFumens)
+                    line[1] = str(len(matchedFumens))
     
-    def true_minimal(self, pathFile="", output="", tinyurl=True, fumenCode=False, alias="None"):
+    def true_minimal(self, pathFile="", output="", tinyurl=True, fumenCode=False, aliases=[]):
         if not pathFile:
             pathFile = self.pathFile
         if not output:
@@ -418,12 +468,12 @@ class Saves():
                 line = "Tinyurl did not accept fumen due to url length"
         
         with open(output, "w") as infile:
-            infile.write(f"True minimal for {alias}: \n")
+            infile.write(f"True minimal for {','.join(aliases)}: \n")
             infile.write(line)
             if fumenCode:
                 infile.write("\n" + fumenCode)
     
-    def uniqueFromPath(self, pathFile="", output="", tinyurl=True, fumenCode=False, alias="None"):
+    def uniqueFromPath(self, pathFile="", output="", tinyurl=True, fumenCode=False, aliases=[]):
         if not pathFile:
             pathFile = self.pathFile
         if not output:
@@ -468,70 +518,10 @@ class Saves():
                 line = "Tinyurl did not accept fumen due to url length"
         
         with open(output, "w") as infile:
-            infile.write(f"Unique Solves Filtered for {alias}: \n")
+            infile.write(f"Unique Solves Filtered for {','.join(aliases)}: \n")
             infile.write(line)
             if fumenCode:
                 infile.write("\n" + fumenCode)
-
-    def runBestSaves(self, pcNum, configs):
-        if not self.checkFileExist(self.logFile):
-            raise OSError("The log file for saves doesn't exist. May be due to sfinder error when running path prior.")
-        
-        # store the chance and the total cases of the setup
-        chanceData = self.getFromLastOutput("  -> success = (\d+.\d{2}% \(\d+\/\d+\))", self.logFile)[0]
-        if configs["Over PC Cases"]:
-            totalCases = int(re.findall("\((\d+)/", chanceData)[0])
-        else:
-            totalCases = int(re.findall("/(\d+)[)]", chanceData)[0])
-
-        data = self.calculateBestSavesList()
-        if not data:
-            return
-        infile = open(self.savePieceOutput, "w")
-        infile.write("Best Saves:\n")
-        for save, count in data.items():
-            percent = count / totalCases * 100
-            infile.write(f'{save}: {percent:.2f} ({count}/{totalCases})\n')
-
-        infile.close()
-    
-    def calculateBestSavesList(self, pcNum=2):
-        # defaults to 2nd pc as it's the most common pc to use this for
-
-        pieces = self.getFromLastOutput("  ([TILJSZOP1-7!,\[\]^*]+)", self.logFile)[0]
-        # from pieces get the pieces given for the possible pieces in the last bag of the pc and it's length
-        lastBag, newBagNumUsed = self.__findLastBag(pieces)
-
-        path = f'{self.bestSave}PC-{pcNum}.txt'
-        if not self.checkFileExist(path):
-            raise OSError(f'The best saves for "{pcNum}" have not been found yet. However, you can create your own if you create the file "{path}".')
-
-        with open(path, "r") as outfile:
-            bestSaves = {line.rstrip(): 0 for line in outfile}
-
-        with open(self.pathFile, "r") as outfile:
-            outfile.readline()
-            for line in outfile:
-                line = line.split(",")
-                if line[1] == "0":
-                    continue
-
-                bagSavePieces = lastBag - set(line[0][-newBagNumUsed:])
-                savePieces = set(line[3].strip().split(";"))
-                if '' in savePieces:
-                    savePieces = set()
-                
-                allSaves = self.__createAllSavesQ(savePieces, bagSavePieces)
-
-                for save in bestSaves:
-                    currBool = False
-                    for s in save.split("/"):
-                        currBool = currBool or self.__compareQueues(allSaves, s)
-                    if currBool:
-                        bestSaves[save] += 1
-                        break
-            
-        return bestSaves
 
     # determine the length of the last bag based on queue
     def __findLastBag(self, pieces, pcNum):
@@ -730,12 +720,12 @@ class Saves():
                 avoid = distributeAvoid
                 if operator:
                     if operator == "&&":
-                        if distributeNOT or distributeAvoid:
+                        if distributeNOT ^ distributeAvoid:
                             currBool = currBool or saveable
                         else:
                             currBool = currBool and saveable
                     elif operator == "||":
-                        if distributeNOT or distributeAvoid:
+                        if distributeNOT ^ distributeAvoid:
                             currBool = currBool and saveable
                         else:
                             currBool = currBool or saveable
@@ -841,4 +831,4 @@ def runTestCases():
 if __name__ == "__main__":
     s = Saves()
     s.handleParse()
-    #runTestCases()
+    runTestCases()
