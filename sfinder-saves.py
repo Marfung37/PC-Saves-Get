@@ -361,22 +361,16 @@ class Saves():
 
         # main section
         aliases = []
+        wantedStacks = []
         for wantedSave in wantedSaves:
             if "#" in wantedSave:
                 aliases.append(wantedSave.split("#")[1])
                 wantedSave = wantedSave.split("#")[0]
             else:
                 aliases.append(wantedSave)
-            stack = self.__makeStack(wantedSave)
-            self.__filterFumensInPath(stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed, linesMatched)
-
-        # for every line not matched is emptied
-        for i in range(len(linesMatched)):
-            if not linesMatched[i]:
-                line = pathFileLines[i+1]
-                line[-1] = ""
-                line[1] = "0"
-                pathFileLines[i+1] = line
+            wantedStacks.append(self.__makeStack(wantedSave))
+        
+        self.__filterFumensInPath(wantedStacks, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed)
 
         with open(self.filteredPath, "w") as infile:
             for line in pathFileLines:
@@ -412,15 +406,15 @@ class Saves():
         for label, fumen in zip(labels, fumenSet):
             fumenAndQueue[fumen] = label
 
-    def __filterFumensInPath(self, stack, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed, linesMatched):
+    def __filterFumensInPath(self, stacks, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed):
         for i, line in enumerate(pathFileLines[1:]):
-            if not linesMatched[i]:
-                queue = Counter(line[0])
-                if line[4]:
-                    fumens = line[4].split(";")
-                else:
-                    continue
-                matchedFumens = []
+            queue = Counter(line[0])
+            if line[4]:
+                fumens = line[4].split(";")
+            else:
+                continue
+            matchedFumens = []
+            for stack in stacks:
                 for fumen in fumens:
                     savePiece = queue - Counter(fumenAndQueue[fumen])
 
@@ -428,10 +422,12 @@ class Saves():
                     allSaves = [self.tetrisSort("".join(savePiece) + "".join(bagSavePieces))]
                     if self.parseStack(allSaves, stack):
                         matchedFumens.append(fumen)
-                        linesMatched[i] = True
                 if matchedFumens:
-                    line[4] = ";".join(matchedFumens)
-                    line[1] = str(len(matchedFumens))
+                    break 
+            
+            # reformat the line with new filtered data
+            line[4] = ";".join(matchedFumens)
+            line[1] = str(len(matchedFumens))
     
     def true_minimal(self, pathFile="", output="", tinyurl=True, fumenCode=False, aliases=[]):
         if not pathFile:
@@ -831,4 +827,4 @@ def runTestCases():
 if __name__ == "__main__":
     s = Saves()
     s.handleParse()
-    runTestCases()
+    #runTestCases()
