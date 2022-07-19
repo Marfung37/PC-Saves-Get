@@ -597,6 +597,7 @@ class Saves():
 
         queue = ""
         operatorHold = ""
+        justAddedHold = False
         while index < len(wantedPieces):
             char = wantedPieces[index]
 
@@ -632,10 +633,9 @@ class Saves():
                 if operatorHold == char:
                     stack.append(operatorHold*2)
                     operatorHold = ""
-                elif len(operatorHold) == 1:
-                    raise SyntaxError("Wanted Saves: Operator inputted incorrectly should be && or ||")
                 else:
                     operatorHold += char
+                    justAddedHold = True
                 
             # parentheses
             elif char == "(":
@@ -650,6 +650,12 @@ class Saves():
             # error
             else:
                 raise SyntaxError(f"Wanted Saves: Input has unknown character '{char}'")
+
+            if justAddedHold:
+                justAddedHold = False
+            elif operatorHold:
+                raise SyntaxError("Wanted Saves: Operator inputted incorrectly should be && or ||")
+
             index += 1
         
         if queue:
@@ -662,17 +668,15 @@ class Saves():
         else:
             raise SyntaxError("Wanted Saves: Missing closing parentheses")
     
-    def __compareQueues(self, allSaves, queue, diff=False):
+    def __compareQueues(self, allSaves, queue):
+        # hold all queues that match
+        matchedSaves = set()
+        
         # check regex queue
         if re.match("/.*/", queue):
-            if not diff:
-                for save in allSaves:
-                    if re.search(queue[1:-1], save):
-                        return True
-            else:
-                for save in allSaves:
-                    if not re.search(queue[1:-1], save):
-                        return True
+            for save in allSaves:
+                if re.search(queue[1:-1], save):
+                    matchedSaves.add(save)
         
         # normal queue
         else:
@@ -683,19 +687,16 @@ class Saves():
                         break
                     if piece == queue[index]:
                         index += 1
-                if diff:
-                    if index != len(queue):
-                        return True
-                elif index == len(queue):
-                        return True
+                if index == len(queue):
+                    matchedSaves.add(save)
         
-        return False                
+        return matchedSaves                
 
-    def parseStack(self, allSaves, stack, distributeNOT=False, distributeAvoid=False):
-        negate = distributeNOT
-        avoid = distributeAvoid
+    def parseStack(self, allSaves, stack):
+        negate = False
+        avoid = False
         operator = ""
-        currBool = False
+        currMatches = set()
         for ele in stack:
             if ele == "!":
                 negate = not negate
@@ -707,32 +708,36 @@ class Saves():
             
             elif self.isQueue(ele) or type(ele) == type([]):
                 if self.isQueue(ele):
-                    saveable = self.__compareQueues(allSaves, ele, diff=avoid)
-                    if negate:
-                        saveable = not saveable
+                    matchedSaves = self.__compareQueues(allSaves, ele)
                 else:
-                    saveable = self.parseStack(allSaves, ele, negate, avoid)
-                negate = distributeNOT
-                avoid = distributeAvoid
+                    matchedSaves = self.parseStack(allSaves, ele)
+                
+                # if avoid then match with all queues that previously not matched
+                if avoid:
+                    matchedSaves = set(allSaves) - matchedSaves
+                # if negate then didn't match or if matched then match with all
+                if negate:
+                    if matchedSaves:
+                        matchedSaves = set()
+                    else:
+                        matchedSaves = set(allSaves)
+                
                 if operator:
                     if operator == "&&":
-                        if distributeNOT ^ distributeAvoid:
-                            currBool = currBool or saveable
+                        if currMatches and matchedSaves:
+                            currMatches = currMatches | matchedSaves
                         else:
-                            currBool = currBool and saveable
+                            currMatches = set()
                     elif operator == "||":
-                        if distributeNOT ^ distributeAvoid:
-                            currBool = currBool and saveable
-                        else:
-                            currBool = currBool or saveable
+                        currMatches = currMatches | matchedSaves
                     else:
                         raise RuntimeError("WantedParse: Operator variable got a non-operator (please contact dev)")
                 else:
-                    currBool = saveable
+                    currMatches = matchedSaves
 
             else:
                 raise RuntimeError("WantedParse: Stack includes string that's not a queue nor operator (please contact dev)")
-        return currBool
+        return currMatches
     
     # sorts the pieces inputted
     def tetrisSort(self, queue):
