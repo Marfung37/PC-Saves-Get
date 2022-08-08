@@ -211,14 +211,7 @@ class Saves():
                             else:
                                 wantedSavesFails[wantedSave].append(line[0])
                 totalCases += args["Over Solves"]
-
-            if args["Fails"]:
-                for wantedSave in wantedSavesFails:
-                    if wantedSave not in wantedSavesFails:
-                        wantedSavesFails[wantedSave] = [line[0]]
-                    else:
-                        wantedSavesFails[wantedSave].append(line[0])
-                
+            
             totalCases += not args["Over Solves"]
         
         outfile.close()
@@ -251,7 +244,7 @@ class Saves():
                     percent = value / totalCases * 100
                     percentStr = f'{key}: {percent:.2f}%'
                     if args["Fraction"]:
-                        percentStr += f'({value}/{totalCases})'
+                        percentStr += f' ({value}/{totalCases})'
                 else:
                     percentStr = f'{key}: {value}'
                 
@@ -794,28 +787,28 @@ def runTestCases():
 
     tests = open("resources/testOutputs.txt", "r")
 
-    s.handleParse(customInput=["percent", "-w", "/[OSZ]/#O/S/Z", "-k", "2nd Saves", "-a", "-pc", "2", "-f", "resources/testPath2.csv", "-pr"])
+    s.handleParse(customInput=["percent", "-w", "/[OSZ]/#O/S/Z", "-k", "2nd Saves", "-a", "-pc", "2", "-f", "resources/testPath2.csv"])
     with open(s.percentOutput, "r") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 1")
     
     tests.readline()
-    s.handleParse(customInput=["percent", "-w", "I", "-p", "*p7", "-fa", "-os", "-f", "resources/testPath2.csv", "-pr"])
+    s.handleParse(customInput=["percent", "-w", "/[ILJO]/", "-p", "*p7", "-fa", "-os", "-f", "resources/testPath2.csv"])
     with open(s.percentOutput, "r") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 2")
 
     tests.readline()
-    s.handleParse(customInput=["percent", "-a", "-p", "*p7", "-fr", "-fa", "-os", "-f", "resources/testPath2.csv", "-pr"])
+    s.handleParse(customInput=["percent", "-k", "1st Saves", "-p", "*p7", "-fr", "-os", "-f", "resources/testPath1.csv"])
     with open(s.percentOutput, "r") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 3")
     
     tests.readline()
-    s.handleParse(customInput=["filter", "-w", "/T.*[LJ].*$/", "-pc", "1", "-f", "resources/testPath1.csv", "-pr", "-t"])
+    s.handleParse(customInput=["filter", "-w", "/T.*[LJ].*$/", "-pc", "1", "-f", "resources/testPath1.csv", "-t"])
     with open(s.filterOutput, "r") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
@@ -831,5 +824,5 @@ def runTestCases():
 
 if __name__ == "__main__":
     s = Saves()
-    s.handleParse()
-    #runTestCases()
+    #s.handleParse()
+    runTestCases()
