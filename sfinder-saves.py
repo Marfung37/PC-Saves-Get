@@ -20,6 +20,7 @@ class Saves():
     fumenLabels = "resources/fumenLabels.js"
     fumenCombine = "resources/fumenCombine.js"
     fumenComment = "resources/fumenAddComment.js"
+    fumenFirsts = "resources/fumenTakeFirstPage.js"
     bestSave = "bestSaves/"
 
     def __init__(self):
@@ -57,6 +58,7 @@ class Saves():
         filterParser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default='')", default=None, metavar="<string>", nargs='*')
         filterParser.add_argument("-p", "--pieces", help="pieces used on the setup (required unless there's -pc)", metavar="<string>", nargs='+')
         filterParser.add_argument("-pc", "--pc-num", help="pc num for the setup & solve (required unless there's -p)", metavar="<int>", type=int)
+        filterParser.add_argument("-c", "--cumulative", help="gives percents cumulatively in fumens of a minimal set (default: False)", action="store_true")
         filterParser.add_argument("-f", "--path", help="path file directory (default: output/path.csv)", metavar="<directory>", default=self.pathFile, type=str)
         filterParser.add_argument("-o", "--output", help="output file directory (default: output/filteredSolves)", metavar="<directory>", default=self.filterOutput, type=str)
         filterParser.add_argument("-pr", "--print", help="log to terminal (default: True)", action="store_false")
@@ -316,6 +318,7 @@ class Saves():
             return
         
         # options
+        filterFuncArgs["Cumulative"] = args.cumulative
         filterFuncArgs["Path File"] = args.path
         filterFuncArgs["Output File"] = args.output
         filterFuncArgs["Print"] = args.print
@@ -328,6 +331,7 @@ class Saves():
     # filter the path fumen's for the particular save
     def filter(self, wantedSaves, pieces="", pcNum=-1, args={}):
         defaultArgs = {
+            "Cumulative": False,
             "Path File": self.pathFile,
             "Output File": self.filterOutput,
             "Solve": "minimal",
@@ -371,7 +375,7 @@ class Saves():
             
         if args["Solve"] != "None":
             if args["Solve"] == "minimal":
-                self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], aliases)
+                self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], args["Cumulative"], aliases, )
             elif args["Solve"] == "unique":
                 self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], aliases)
             
@@ -400,7 +404,7 @@ class Saves():
             fumenAndQueue[fumen] = label
 
     def __filterFumensInPath(self, stacks, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed):
-        for i, line in enumerate(pathFileLines[1:]):
+        for line in pathFileLines[1:]:
             queue = Counter(line[0])
             if line[4]:
                 fumens = line[4].split(";")
@@ -422,7 +426,7 @@ class Saves():
             line[4] = ";".join(matchedFumens)
             line[1] = str(len(matchedFumens))
     
-    def true_minimal(self, pathFile="", output="", tinyurl=True, fumenCode=False, aliases=[]):
+    def true_minimal(self, pathFile="", output="", tinyurl=True, fumenCode=False, cumulative=False, aliases=[]):
         if not pathFile:
             pathFile = self.pathFile
         if not output:
@@ -433,14 +437,61 @@ class Saves():
         with open("path_minimal_strict.md", "r") as trueMinFile:
             trueMinLines = trueMinFile.readlines()
         
+        fumenLst = re.findall("(v115@[a-zA-Z0-9?/+]*)", trueMinLines[6])
+
+        # only get the first page in case multipage fumens in minimals
+        firstsP = subprocess.Popen(["node", self.fumenFirsts] + fumenLst, stdout=subprocess.PIPE)
+        fumenLst = firstsP.stdout.read().decode().rstrip().split()
+
         totalCases = int(re.search("/ (\d+)\)", trueMinLines[2]).group(1))
         percents = []
-        for line in trueMinLines[13::9]:
-            numCoverCases = int(re.match("(\d+)", line).group(1))
-            percent = numCoverCases / totalCases * 100
-            percent = f'{percent:.2f}% ({numCoverCases}/{totalCases})'
-            percents.append(percent)
-        fumenLst = re.findall("(v115@[a-zA-Z0-9?/+]*)", trueMinLines[6])
+        if cumulative:
+            # count from path the number of each solve cumulatively
+            orderedCumulative = []
+            cumPercents = []
+
+            with open(pathFile, "r") as outfile:
+                lines = outfile.readlines()
+            
+            while fumenLst:
+                countSolve = {minFumen: 0 for minFumen in fumenLst}
+                for line in lines:
+                    fumens = line.rstrip().split(",")[-1]
+                    if fumens:
+                        for fumen in fumens.split(";"):
+                            if fumen in countSolve:
+                                countSolve[fumen] += 1
+                    
+                maxCover = max(countSolve.values())
+                maxIndex = list(countSolve.values()).index(maxCover)
+
+                if maxCover == 0:
+                    break
+                    
+                maxFumen = list(countSolve.keys())[maxIndex]
+
+                if cumPercents:
+                    cumPercents.append(cumPercents[-1] + maxCover / totalCases)
+                else:
+                    cumPercents.append(maxCover / totalCases)
+                
+                # remove the lines with queues already covered
+                for i in range(len(lines) - 1, -1, -1):
+                    line = lines[i]
+                    fumens = line.rstrip().split(",")[-1]
+                    if fumens:
+                        if maxFumen in fumens.split(";"):
+                            lines.pop(i)
+                orderedCumulative.append(fumenLst.pop(maxIndex))
+            
+            percents = list(map(lambda x: f'Cumulative Cover: {x*100:.2f}%', cumPercents))
+            fumenLst = orderedCumulative
+        else:
+            for line in trueMinLines[13::9]:
+                numCoverCases = int(re.match("(\d+)", line).group(1))
+                percent = numCoverCases / totalCases * 100
+                percent = f'{percent:.2f}% ({numCoverCases}/{totalCases})'
+                percents.append(percent)
 
         combineP = subprocess.Popen(["node", self.fumenCombine] + fumenLst, stdout=subprocess.PIPE)
         fumenCombineOut = combineP.stdout.read().decode().rstrip()
@@ -448,7 +499,7 @@ class Saves():
         line = commentP.stdout.read().decode().rstrip()
 
         if fumenCode:
-            fumenCode = fumenCode[21:]
+            fumenCode = line[22:]
         
         if tinyurl:
             try:
@@ -824,5 +875,5 @@ def runTestCases():
 
 if __name__ == "__main__":
     s = Saves()
-    #s.handleParse()
-    runTestCases()
+    s.handleParse()
+    #runTestCases()

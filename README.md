@@ -75,6 +75,7 @@ Filter path.csv for only solves that meet the wanted saves and outputs the solve
   * Note: If both ``-p`` and ``-pc`` is included, ``-p`` would take precedence </ul>
 
 ``--best-save`` or ``-bs`` - enable best save where first wantedSave is priority and second and so on  
+``--cumulative`` or ``-c`` - gives percents cumulatively in fumens only in a minimal set (default: False)
 ``--path``  or ``-f`` - path file directory (default: output/path.csv)  
 ``--output`` or ``-o`` - output file directory (default: output/saves.txt)  
 ``--print`` or ``-pr`` - print out the output into the terminal (default: true)  
