@@ -259,21 +259,21 @@ class Saves():
                 
                 if treeDepth > 0:
                     percentStr += f"\nTree (depth: {treeDepth})"
-                    def helper(pieces, currNode, currDepth=0):
+                    def helper(pieces, currNode, divisor=1, currDepth=0):
                         additionStr = ""
 
-                        percent = currNode["count"] / totalCases * 100
+                        percent = currNode["count"] / (totalCases // divisor) * 100
                         if currDepth == 0:
                             additionStr += f"\n* -> {percent:.2f}%"
                         else:
                             additionStr += '\n' + '  ' * (currDepth - 1) + f'∟ {pieces} -> {percent:.2f}%'
                         if args["Fraction"]:
-                            additionStr += f' ({currNode["count"]}/{totalCases})'
+                            additionStr += f' ({currNode["count"]}/{totalCases // divisor})'
                         
                         if currDepth < treeDepth: 
                             for piece in self.PIECES:
                                 if piece in currNode["next"]:
-                                    additionStr += helper(pieces + piece, currNode["next"][piece], currDepth+1)
+                                    additionStr += helper(pieces + piece, currNode["next"][piece], divisor*len(currNode["next"]), currDepth+1)
                         return additionStr
 
                     percentStr += helper("", value)
