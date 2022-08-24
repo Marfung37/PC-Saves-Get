@@ -42,6 +42,7 @@ class Saves():
         percentParser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
         percentParser.add_argument("-p", "--pieces", help="pieces used on the setup (required unless there's -pc)", metavar="<string>", nargs='+')
         percentParser.add_argument("-pc", "--pc-num", help="pc num for the setup & solve (required unless there's -p)", metavar="<int>", type=int)
+        percentParser.add_argument("-td", "--tree-depth", help="set the tree depth of pieces in percent (default: 0)", metavar="<int>", type=int, default=0)
         percentParser.add_argument("-f", "--path", help="path file directory (default: output/path.csv)", metavar="<directory>", default=self.pathFile, type=str)
         percentParser.add_argument("-o", "--output", help="output file directory (default: output/saves.txt)", metavar="<directory>", default=self.percentOutput, type=str)
         percentParser.add_argument("-pr", "--print", help="log to terminal (default: True)", action="store_false")
@@ -110,6 +111,7 @@ class Saves():
         
         # options
         percentFuncArgs["Best Save"] = args.best_save
+        percentFuncArgs["Tree Depth"] = args.tree_depth
         percentFuncArgs["Path File"] = args.path
         percentFuncArgs["Output File"] = args.output
         percentFuncArgs["Print"] = args.print
@@ -127,6 +129,7 @@ class Saves():
             "Print": True,
             "All Saves": False,
             "Best Save": False,
+            "Tree Depth": 0,
             "Fraction": True,
             "Fails": False,
             "Over Solves": False
@@ -138,11 +141,14 @@ class Saves():
             print(f'The path to "{args["Path File"]}" could not be found!')
             return
 
-        countWanted = {}
+        # holds a tree where each node is a dictionary with a percent and
+        # next key where next is a list holding the next node depth
+        wantedTree = {}
         wantedSavesFails = {}
         wantedStacks = []
         countAll = None
         storeAllPreviousQs = None
+        treeDepth = args["Tree Depth"]
         if args["All Saves"]:
             countAll = {}
             if args["Fails"]:
@@ -156,22 +162,23 @@ class Saves():
                     wantedSave =  wantedSave[0]
                 else:
                     alias = wantedSave
-                countWanted[alias] = 0
+                
+                wantedTree[alias] = {"count": 0, "next": None}
                 wantedStacks.append(self.__makeStack(wantedSave))
 
         # from pieces get the pieces given for the possible pieces in the last bag of the pc and it's length
         lastBag, newBagNumUsed = self.__findLastBag(pieces, pcNum)
 
-        totalCases = self.__getPercentData(lastBag, newBagNumUsed, wantedStacks, countWanted, countAll, storeAllPreviousQs, wantedSavesFails, args)
+        totalCases = self.__getPercentData(lastBag, newBagNumUsed, wantedStacks, wantedTree, treeDepth, countAll, storeAllPreviousQs, wantedSavesFails, args)
         
-        allStr = self.__formatPercentData(totalCases, countWanted, countAll, wantedSavesFails, args)
+        allStr = self.__formatPercentData(totalCases, wantedTree, treeDepth, countAll, wantedSavesFails, args)
         with open(args["Output File"], "w") as infile:
             infile.write(allStr)
         
         if args["Print"]:
             print(allStr)
     
-    def __getPercentData(self, lastBag, newBagNumUsed, wantedStacks, countWanted, countAll, storeAllPreviousQs, wantedSavesFails, args):
+    def __getPercentData(self, lastBag, newBagNumUsed, wantedStacks, wantedTree, treeDepth, countAll, storeAllPreviousQs, wantedSavesFails, args):
         totalCases = 0
         outfile = open(args["Path File"], "r")
         outfile.readline() # skip header row
@@ -200,9 +207,30 @@ class Saves():
                         for nonsave in set(wantedSavesFails.keys()) - set(allSaves):
                             wantedSavesFails[nonsave].append(line[0])
 
-                for stack, wantedSave in zip(wantedStacks, countWanted):
-                    if(self.parseStack(allSaves, stack)):
-                        countWanted[wantedSave] += 1
+                for stack, wantedSave in zip(wantedStacks, wantedTree):
+                    canSave = bool(self.parseStack(allSaves, stack))
+                    currDepthNode = wantedTree[wantedSave]
+
+                    currDepth = 0
+                    node = {"count": 0, "next": None}
+
+                    # add to count of overall
+                    currDepthNode["count"] += canSave
+                    while currDepth < treeDepth:
+                        # if a node has not been created for the next piece
+                        if currDepthNode["next"] is None:
+                            currDepthNode["next"] = {}
+                        if line[0][currDepth] not in currDepthNode["next"]:
+                            # create a new node for the next piece
+                            currDepthNode["next"][line[0][currDepth]] = node.copy()
+
+                        currDepthNode = currDepthNode["next"][line[0][currDepth]]
+
+                        currDepthNode["count"] += canSave                            
+                            
+                        currDepth += 1
+
+                    if canSave:
                         if args["Best Save"]:
                             # best save will not consider any further stack
                             break
@@ -220,14 +248,35 @@ class Saves():
         
         return totalCases
     
-    def __formatPercentData(self, totalCases, countWanted, countAll, wantedSavesFails, args):
+    def __formatPercentData(self, totalCases, wantedTree, treeDepth, countAll, wantedSavesFails, args):
         allStr = []
-        for key, value in countWanted.items():
+        for key, value in wantedTree.items():
             if totalCases:
-                percent = value / totalCases * 100
+                percent = value["count"] / totalCases * 100
                 percentStr = f'{key}: {percent:.2f}%'
                 if args["Fraction"]:
-                    percentStr += f' ({value}/{totalCases})'
+                    percentStr += f' ({value["count"]}/{totalCases})'
+                
+                if treeDepth > 0:
+                    percentStr += f"\nTree (depth: {treeDepth})"
+                    def helper(pieces, currNode, currDepth=0):
+                        additionStr = ""
+
+                        percent = currNode["count"] / totalCases * 100
+                        if currDepth == 0:
+                            additionStr += f"\n* -> {percent:.2f}%"
+                        else:
+                            additionStr += '\n' + '  ' * (currDepth - 1) + f'∟ {pieces} -> {percent:.2f}%'
+                        if args["Fraction"]:
+                            additionStr += f' ({currNode["count"]}/{totalCases})'
+                        
+                        if currDepth < treeDepth: 
+                            for piece in self.PIECES:
+                                if piece in currNode["next"]:
+                                    additionStr += helper(pieces + piece, currNode["next"][piece], currDepth+1)
+                        return additionStr
+
+                    percentStr += helper("", value)
             else:
                 percentStr = f'{key}: {value}'
             
