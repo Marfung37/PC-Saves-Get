@@ -13,7 +13,7 @@ class Saves():
     pathFile = "output/path.csv"
     percentOutput = "output/savesPercent.txt"
 
-    filteredPath = "resources/filteredPath.csv"
+    filteredPath = "output/filteredPath.csv"
     filterOutput = "output/filteredSolves.txt"
 
     wantedSavesJSON = "resources/wantedSavesMap.json"
@@ -330,16 +330,18 @@ class Saves():
                 return
 
         # handle wanted saves input
+        wantedSaves = []
         if args.wanted_saves is not None:
-            wantedSaves = ",".join(args.wanted_saves).split(",")
+            wantedSaves.extend(",".join(args.wanted_saves).split(","))
         elif args.key is not None:
             with open(self.wantedSavesJSON, "r") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
-            wantedSaves = ",".join(wantedSaveDict[args.key]).split(",")
+            for key in args.key:
+                wantedSaves.extend(",".join(wantedSaveDict[key]).split(","))
         
         if not wantedSaves:
             # didn't have the wanted-saves nor a key
-            print("Syntax Error: The options --wanted-saves (-w) nor --key (-k) was found")
+            print("Syntax Error: The options w--anted-saves (-w) nor --key (-k) was found")
             return
         
         if not args.best_save:
@@ -424,11 +426,11 @@ class Saves():
             
         if args["Solve"] != "None":
             if args["Solve"] == "minimal":
-                self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], args["Cumulative"], aliases, )
+                success = self.true_minimal(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], args["Cumulative"], aliases, )
             elif args["Solve"] == "unique":
-                self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], aliases)
+                success = self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], aliases)
             
-            if args["Print"]:
+            if args["Print"] and success == 0:
                 with open(args["Output File"], "r") as outfile:
                     print(outfile.read())
     
@@ -487,6 +489,10 @@ class Saves():
             trueMinLines = trueMinFile.readlines()
         
         fumenLst = re.findall("(v115@[a-zA-Z0-9?/+]*)", trueMinLines[6])
+
+        if not fumenLst:
+            print(f"Runtime Error: There is no solve that saves {','.join(aliases)}")
+            return 1 # error
 
         # only get the first page in case multipage fumens in minimals
         firstsP = subprocess.Popen(["node", self.fumenFirsts] + fumenLst, stdout=subprocess.PIPE)
@@ -561,6 +567,8 @@ class Saves():
             infile.write(line)
             if fumenCode:
                 infile.write("\n" + fumenCode)
+        
+        return 0
     
     def uniqueFromPath(self, pathFile="", output="", tinyurl=True, fumenCode=False, aliases=[]):
         if not pathFile:
@@ -579,6 +587,10 @@ class Saves():
                             countSolve[fumen] = 1
                         else:
                             countSolve[fumen] += 1
+        
+        if all(map(lambda x: x == 0, countSolve.values())):
+           print(f"Runtime Error: There is no solve that saves {','.join(aliases)}")
+           return 1 # error
         
         totalCases += 1
         countSolve = sorted(countSolve.items(), key=lambda x:x[1], reverse=True)
@@ -611,6 +623,8 @@ class Saves():
             infile.write(line)
             if fumenCode:
                 infile.write("\n" + fumenCode)
+        
+        return 0
 
     # determine the length of the last bag based on queue
     def __findLastBag(self, pieces, pcNum):

@@ -1,0 +1,6 @@
+path_minimal_strict.md
+package.json
+package-lock.json
+node_modules
+input
+output
