@@ -17,9 +17,9 @@ class Saves():
     filterOutput = "output/filteredSolves.txt"
 
     wantedSavesJSON = "resources/wantedSavesMap.json"
+    fumenInput = "resources/fumenInput.csv"
     fumenLabels = "resources/fumenLabels.js"
-    fumenCombine = "resources/fumenCombine.js"
-    fumenComment = "resources/fumenAddComment.js"
+    fumenCombine = "resources/fumenCombineAndComment.js"
     fumenFirsts = "resources/fumenTakeFirstPage.js"
     bestSave = "bestSaves/"
 
@@ -83,7 +83,7 @@ class Saves():
             # add all wanted saves
             wantedSaves.extend(args.wanted_saves)
         if args.key is not None:
-            with open(self.wantedSavesJSON, "r") as outfile:
+            with open(self.wantedSavesJSON, "r", encoding="utf8") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
             wantedSaves.extend([",".join(wantedSaveDict[k]) for k in args.key])
         wantedSaves = ",".join(wantedSaves)
@@ -172,7 +172,7 @@ class Saves():
         totalCases = self.__getPercentData(lastBag, newBagNumUsed, wantedStacks, wantedTree, treeDepth, countAll, storeAllPreviousQs, wantedSavesFails, args)
         
         allStr = self.__formatPercentData(totalCases, wantedTree, treeDepth, countAll, wantedSavesFails, args)
-        with open(args["Output File"], "w") as infile:
+        with open(args["Output File"], "w", encoding="utf8") as infile:
             infile.write(allStr)
         
         if args["Print"]:
@@ -180,7 +180,7 @@ class Saves():
     
     def __getPercentData(self, lastBag, newBagNumUsed, wantedStacks, wantedTree, treeDepth, countAll, storeAllPreviousQs, wantedSavesFails, args):
         totalCases = 0
-        outfile = open(args["Path File"], "r")
+        outfile = open(args["Path File"], "r", encoding="utf8")
         outfile.readline() # skip header row
 
         for line in outfile:
@@ -334,7 +334,7 @@ class Saves():
         if args.wanted_saves is not None:
             wantedSaves.extend(",".join(args.wanted_saves).split(","))
         elif args.key is not None:
-            with open(self.wantedSavesJSON, "r") as outfile:
+            with open(self.wantedSavesJSON, "r", encoding="utf8") as outfile:
                 wantedSaveDict = json.loads(outfile.read())
             for key in args.key:
                 wantedSaves.extend(",".join(wantedSaveDict[key]).split(","))
@@ -420,7 +420,7 @@ class Saves():
         
         self.__filterFumensInPath(wantedStacks, pathFileLines, fumenAndQueue, lastBag, newBagNumUsed)
 
-        with open(self.filteredPath, "w") as infile:
+        with open(self.filteredPath, "w", encoding="utf8") as infile:
             for line in pathFileLines:
                 infile.write(",".join(line) + "\n")
             
@@ -431,11 +431,11 @@ class Saves():
                 success = self.uniqueFromPath(self.filteredPath, args["Output File"], args["Tinyurl"], args["Fumen Code"], aliases)
             
             if args["Print"] and success == 0:
-                with open(args["Output File"], "r") as outfile:
+                with open(args["Output File"], "r", encoding="utf8") as outfile:
                     print(outfile.read())
     
     def __filterGetData(self, pathFile, pathFileLines, fumenSet, fumenAndQueue, linesMatched):
-        with open(pathFile, "r") as outfile:
+        with open(pathFile, "r", encoding="utf8") as outfile:
             headerLine = outfile.readline().rstrip().split(",")
             pathFileLines.append(headerLine)
             for line in outfile:
@@ -448,7 +448,10 @@ class Saves():
                     continue
                 fumenSet.update(set(fumens))
         
-        labelP = subprocess.Popen(["node", self.fumenLabels] + list(fumenSet), stdout=subprocess.PIPE)
+        with open(self.fumenInput, "w", encoding="utf8") as outfile:
+            outfile.write("\n".join(fumenSet))
+
+        labelP = subprocess.Popen(["node", self.fumenLabels], stdout=subprocess.PIPE)
         labels = labelP.stdout.read().decode().rstrip().split("\n")
         
         for label, fumen in zip(labels, fumenSet):
@@ -485,7 +488,7 @@ class Saves():
 
         os.system(f'sfinder-minimal {pathFile}')
 
-        with open("path_minimal_strict.md", "r") as trueMinFile:
+        with open("path_minimal_strict.md", "r", encoding="utf8") as trueMinFile:
             trueMinLines = trueMinFile.readlines()
         
         fumenLst = re.findall("(v115@[a-zA-Z0-9?/+]*)", trueMinLines[6])
@@ -493,6 +496,9 @@ class Saves():
         if not fumenLst:
             print(f"Runtime Error: There is no solve that saves {','.join(aliases)}")
             return 1 # error
+        
+        with open(self.fumenInput, "w", encoding="utf8") as outfile:
+            outfile.write("\n".join(fumenLst))
 
         # only get the first page in case multipage fumens in minimals
         firstsP = subprocess.Popen(["node", self.fumenFirsts] + fumenLst, stdout=subprocess.PIPE)
@@ -505,7 +511,7 @@ class Saves():
             orderedCumulative = []
             cumPercents = []
 
-            with open(pathFile, "r") as outfile:
+            with open(pathFile, "r", encoding="utf8") as outfile:
                 lines = outfile.readlines()
             
             while fumenLst:
@@ -548,10 +554,12 @@ class Saves():
                 percent = f'{percent:.2f}% ({numCoverCases}/{totalCases})'
                 percents.append(percent)
 
-        combineP = subprocess.Popen(["node", self.fumenCombine] + fumenLst, stdout=subprocess.PIPE)
-        fumenCombineOut = combineP.stdout.read().decode().rstrip()
-        commentP = subprocess.Popen(["node", self.fumenComment, fumenCombineOut] + percents, stdout=subprocess.PIPE)
-        line = commentP.stdout.read().decode().rstrip()
+        with open(self.fumenInput, "w", encoding="utf8") as outfile:
+            for fumen, percent in zip(fumenLst, percents):
+                outfile.write(f"{fumen},{percent}\n")
+
+        combineP = subprocess.Popen(["node", self.fumenCombine], stdout=subprocess.PIPE)
+        line = combineP.stdout.read().decode().rstrip() 
 
         if fumenCode:
             fumenCode = line[22:]
@@ -562,7 +570,7 @@ class Saves():
             except:
                 line = "Tinyurl did not accept fumen due to url length"
         
-        with open(output, "w") as infile:
+        with open(output, "w", encoding="utf8") as infile:
             infile.write(f"True minimal for {','.join(aliases)}: \n")
             infile.write(line)
             if fumenCode:
@@ -577,7 +585,7 @@ class Saves():
             output = self.filterOutput
 
         countSolve = {}
-        with open(pathFile, "r") as outfile:
+        with open(pathFile, "r", encoding="utf8") as outfile:
             outfile.readline()
             for totalCases, line in enumerate(outfile):
                 fumens = line.rstrip().split(",")[-1]
@@ -602,12 +610,12 @@ class Saves():
             percents.append(f"{percent:.2f}% ({count}/{totalCases})")
             solves.append(fumen)
         
-        # combine the fumen codes of the solves
-        combineP = subprocess.Popen(["node", self.fumenCombine] + solves, stdout=subprocess.PIPE)
-        fumenCombineOut = combineP.stdout.read().decode().rstrip()
-        # add the comments to each page of the coverage of that solve
-        commentP = subprocess.Popen(["node", self.fumenComment, fumenCombineOut] + percents, stdout=subprocess.PIPE)
-        line = commentP.stdout.read().decode().rstrip()
+        with open(self.fumenInput, "w", encoding="utf8") as outfile:
+            for fumen, percent in zip(solves, percents):
+                outfile.write(f"{fumen},{percent}\n")
+
+        combineP = subprocess.Popen(["node", self.fumenCombine], stdout=subprocess.PIPE)
+        line = combineP.stdout.read().decode().rstrip() 
 
         if fumenCode or len(countSolve) > 128:
             fumenCode = line[21:]
@@ -618,7 +626,7 @@ class Saves():
             except:
                 line = "Tinyurl did not accept fumen due to url length"
         
-        with open(output, "w") as infile:
+        with open(output, "w", encoding="utf8") as infile:
             infile.write(f"Unique Solves Filtered for {','.join(aliases)}: \n")
             infile.write(line)
             if fumenCode:
@@ -899,31 +907,31 @@ class Saves():
 def runTestCases():
     s = Saves()
 
-    tests = open("resources/testOutputs.txt", "r")
+    tests = open("resources/testOutputs.txt", "r", encoding="utf8")
 
     s.handleParse(customInput=["percent", "-w", "/[OSZ]/#O/S/Z", "-k", "2nd Saves", "-a", "-pc", "2", "-f", "resources/testPath2.csv"])
-    with open(s.percentOutput, "r") as outfile:
+    with open(s.percentOutput, "r", encoding="utf8") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 1")
     
     tests.readline()
     s.handleParse(customInput=["percent", "-w", "/[ILJO]/", "-p", "*p7", "-fa", "-os", "-f", "resources/testPath2.csv"])
-    with open(s.percentOutput, "r") as outfile:
+    with open(s.percentOutput, "r", encoding="utf8") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 2")
 
     tests.readline()
     s.handleParse(customInput=["percent", "-k", "1st Saves", "-p", "*p7", "-fr", "-os", "-f", "resources/testPath1.csv"])
-    with open(s.percentOutput, "r") as outfile:
+    with open(s.percentOutput, "r", encoding="utf8") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 3")
     
     tests.readline()
     s.handleParse(customInput=["filter", "-w", "/T.*[LJ].*$/", "-pc", "1", "-f", "resources/testPath1.csv", "-t"])
-    with open(s.filterOutput, "r") as outfile:
+    with open(s.filterOutput, "r", encoding="utf8") as outfile:
         for out in outfile:
             assert out.rstrip() == tests.readline().rstrip()
         print("Pass Test 4")
@@ -933,10 +941,10 @@ def runTestCases():
     # clean up
     open(s.filterOutput, "w").close()
     open(s.percentOutput, "w").close()
-    os.remove("resources/filteredPath.csv")
+    os.remove(s.filteredPath)
     os.remove("path_minimal_strict.md")
 
 if __name__ == "__main__":
-    s = Saves()
-    s.handleParse()
-    #runTestCases()
+    #s = Saves()
+    #s.handleParse()
+    runTestCases()

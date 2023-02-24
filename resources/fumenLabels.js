@@ -1,11 +1,14 @@
 const fs = require("fs");
 const {decoder} = require('tetris-fumen');
 
-var fumenCodes = process.argv.slice(2)
+var lines = fs.readFileSync(__dirname + "/fumenInput.csv", 'utf8').split("\n");
+
 var labels = [];
-for(let code of fumenCodes){
-    page = decoder.decode(code)[0];
+
+lines.forEach(line => {
+    page = decoder.decode(line.trim())[0];
+
     labels.push(page.comment);
-}
+})
 
 console.log(labels.join("\n"));

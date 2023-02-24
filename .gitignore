@@ -4,3 +4,4 @@ package-lock.json
 node_modules
 input
 output
+resources/fumenInput.csv
