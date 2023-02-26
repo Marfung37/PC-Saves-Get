@@ -7,21 +7,21 @@ import subprocess
 
 class Saves():
     # constants
-    PIECES = ["T", "I", "L", "J", "S", "Z", "O"]
+    PIECES = ("T", "I", "L", "J", "S", "Z", "O")
     
     # files
-    pathFile = "output/path.csv"
-    percentOutput = "output/savesPercent.txt"
+    dirname = os.path.dirname(__file__)
+    pathFile = os.path.join("output", "path.csv")
+    percentOutput = os.path.join("output", "savesPercent.txt")
 
-    filteredPath = "output/filteredPath.csv"
-    filterOutput = "output/filteredSolves.txt"
+    filteredPath = os.path.join("output", "filteredPath.csv")
+    filterOutput = os.path.join("output", "filteredSolves.txt")
 
-    wantedSavesJSON = "resources/wantedSavesMap.json"
-    fumenInput = "resources/fumenInput.csv"
-    fumenLabels = "resources/fumenLabels.js"
-    fumenCombine = "resources/fumenCombineAndComment.js"
-    fumenFirsts = "resources/fumenTakeFirstPage.js"
-    bestSave = "bestSaves/"
+    wantedSavesJSON = os.path.join(dirname, "resources", "wantedSavesMap.json")
+    fumenInput = os.path.join(dirname, "resources", "fumenInput.csv")
+    fumenLabels = os.path.join(dirname, "resources", "fumenLabels.js")
+    fumenCombine = os.path.join(dirname, "resources", "fumenCombineAndComment.js")
+    fumenFirsts = os.path.join(dirname, "resources", "fumenTakeFirstPage.js")
 
     def __init__(self):
         self.__setupParser()
@@ -324,7 +324,7 @@ class Saves():
         for part in indexRanges:
             part = part.split("-")
             if len(part) <= 2:
-                newIndexRanges.append((part[0], part[0] if len(part) == 1 else part[1]))
+                newIndexRanges.append((int(part[0]), int(part[0]) if len(part) == 1 else int(part[1])))
             else:
                 print("Syntax Error: incorrect format in --index (-i)")
                 return
@@ -344,19 +344,19 @@ class Saves():
             print("Syntax Error: The options w--anted-saves (-w) nor --key (-k) was found")
             return
         
-        if not args.best_save:
-            wantedSaves = [wantedSaves[0]]
-
         # apply index ranges to wanted saves
         newWantedSaves = [] if newIndexRanges else wantedSaves
         for start, end in newIndexRanges:
             if 0 <= start < len(wantedSaves) and 0 <= end < len(wantedSaves) and start <= end:
-                newWantedSaves.extend[wantedSaves[start, end]]
+                newWantedSaves.extend(wantedSaves[start: end + 1])
             else:
                 # index given was out of range
-                print("OutOfBounds: The option index is out of bounds of possible wantedsaves expressions")
+                print("OutOfBounds: The option index is out of bounds of possible wanted saves expressions")
                 return
 
+        if not args.best_save:
+            newWantedSaves = [newWantedSaves[0]]
+        
         pieces = ""
         pcNum = -1
         if args.pieces is not None:
@@ -938,6 +938,8 @@ def runTestCases():
 
     tests.close()
 
+    print("All tests passed")
+
     # clean up
     open(s.filterOutput, "w").close()
     open(s.percentOutput, "w").close()
@@ -945,6 +947,6 @@ def runTestCases():
     os.remove("path_minimal_strict.md")
 
 if __name__ == "__main__":
-    #s = Saves()
-    #s.handleParse()
-    runTestCases()
+    s = Saves()
+    s.handleParse()
+    #runTestCases()
