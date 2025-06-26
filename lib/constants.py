@@ -1,0 +1,5 @@
+BAG = 'TILJSZO'
+
+PCSIZE = 10
+HOLD = 1
+
