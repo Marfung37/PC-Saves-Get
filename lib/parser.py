@@ -153,7 +153,7 @@ def evaluate_ast(node, saves: list[str]) -> bool:
       pattern = re.compile(node.value)
       return any(map(lambda save: pattern.search(save), saves))
     except re.error as e:
-      raise Exception(f"Invalid regex: '{node.value}' - {e}")
+      raise ValueError(f"Invalid regex: '{node.value}' - {e}")
   elif isinstance(node, UnaryOp):
     if node.op == 'NOT':
       return not evaluate_ast(node.expr, saves)
@@ -175,7 +175,7 @@ def evaluate_ast(node, saves: list[str]) -> bool:
     # evaluate and return right side otherwise
     return evaluate_ast(node.right, saves)
 
-  raise Exception(f"Unknown AST node type or operation: {type(node)}")
+  raise ValueError(f"Unknown AST node type or operation: {type(node)}")
 
 def tokenize(text):
   tokens = []
@@ -185,31 +185,39 @@ def tokenize(text):
     if kind == 'WS':
       continue  # skip whitespace
     tokens.append(Token(kind, value))
+
+  if len(tokens) == 0:
+    raise ValueError(f"Expression {text} could not be tokenized")
+
   return tokens
 
-parser = Parser()
+if __name__ == "__main__":
+  parser = Parser()
 
-# Test 1: Basic boolean expression with identifiers
-expr1 = "S && !T || (O && !I)"
-print(f"\nParsing: '{expr1}'")
-ast1 = parser.parse(expr1, tokenize)
-print(f"AST: {ast1}")
+  # Test 1: Basic boolean expression with identifiers
+  expr1 = "S && !T || (O && !I)"
+  print(f"\nParsing: '{expr1}'")
+  ast1 = parser.parse(expr1, tokenize)
+  print(f"AST: {ast1}")
 
-saves1 = ['ST', 'SZ', 'OI']
-result1 = evaluate_ast(ast1, saves1)
-print(f"Evaluate with {saves1}: {result1}") # Expected: (T && !T || (T && !T)) -> F
+  saves1 = ['ST', 'SZ', 'OI']
+  result1 = evaluate_ast(ast1, saves1)
+  print(f"Evaluate with {saves1}: {result1}") # Expected: (T && !T || (T && !T)) -> F
 
-saves2 = ['ST', 'SZ', 'SO']
-result2 = evaluate_ast(ast1, saves2)
-print(f"Evaluate with {saves2}: {result2}") # Expected: (T && !T || (T && !F)) -> T
+  saves2 = ['ST', 'SZ', 'SO']
+  result2 = evaluate_ast(ast1, saves2)
+  print(f"Evaluate with {saves2}: {result2}") # Expected: (T && !T || (T && !F)) -> T
 
-# Test 2: Expression with regex literals
-expr2 = r'/T[ISZO]/ || LJ'
-print(f"\nParsing: '{expr2}'")
-ast2 = parser.parse(expr2, tokenize)
-print(f"AST: {ast2}")
+  # Test 2: Expression with regex literals
+  expr2 = r'/T[ISZO]/ || LJ'
+  print(f"\nParsing: '{expr2}'")
+  ast2 = parser.parse(expr2, tokenize)
+  print(f"AST: {ast2}")
 
-saves3 = ['TL', 'TJ', 'TS', 'SZ', 'IL']
-result3 = evaluate_ast(ast2, saves3)
-print(f"Evaluate with {saves3}: {result3}") # Expected: T || F -> T
+  saves3 = ['TL', 'TJ', 'TS', 'SZ', 'IL']
+  result3 = evaluate_ast(ast2, saves3)
+  print(f"Evaluate with {saves3}: {result3}") # Expected: T || F -> T
 
+  # Expect to error
+  ast3 = parser.parse('abc', tokenize)
+  print(ast3)

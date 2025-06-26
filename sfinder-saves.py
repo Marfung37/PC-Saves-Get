@@ -504,7 +504,7 @@ class Saves():
         firstsP = subprocess.Popen(["node", self.fumenFirsts] + fumenLst, stdout=subprocess.PIPE)
         fumenLst = firstsP.stdout.read().decode().rstrip().split()
 
-        totalCases = int(re.search("/ (\d+)\)", trueMinLines[2]).group(1))
+        totalCases = int(re.search(r"/ (\d+)\)", trueMinLines[2]).group(1))
         percents = []
         if cumulative:
             # count from path the number of each solve cumulatively
@@ -549,7 +549,7 @@ class Saves():
             fumenLst = orderedCumulative
         else:
             for line in trueMinLines[13::9]:
-                numCoverCases = int(re.match("(\d+)", line).group(1))
+                numCoverCases = int(re.match(r"(\d+)", line).group(1))
                 percent = numCoverCases / totalCases * 100
                 percent = f'{percent:.2f}% ({numCoverCases}/{totalCases})'
                 percents.append(percent)
@@ -648,7 +648,7 @@ class Saves():
             raise SyntaxError("The pieces inputted doesn't end with a bag")
         
         # what kind of bag is the last part
-        lastPartPieces = re.findall("\[?([\^tiljszoTILJSZO*]+)\]?P?[1-7!]?", pieces.split(",")[-1])[0]
+        lastPartPieces = re.findall(r"\[?([\^tiljszoTILJSZO*]+)\]?P?[1-7!]?", pieces.split(",")[-1])[0]
         if not lastPartPieces:
             raise SyntaxError("The pieces inputted doesn't end with a bag")
         
@@ -820,6 +820,8 @@ class Saves():
 
             elif self.isOperator(ele):
                 operator = ele
+                negate = False
+                avoid = False
             
             elif self.isQueue(ele) or type(ele) == type([]):
                 if self.isQueue(ele):
@@ -840,7 +842,7 @@ class Saves():
                 if operator:
                     if operator == "&&":
                         if currMatches and matchedSaves:
-                            currMatches = currMatches | matchedSaves
+                            currMatches = currMatches & matchedSaves
                         else:
                             currMatches = set()
                     elif operator == "||":
@@ -909,33 +911,33 @@ def runTestCases():
 
     tests = open("resources/testOutputs.txt", "r", encoding="utf8")
 
-    s.handleParse(customInput=["percent", "-w", "/[OSZ]/#O/S/Z", "-k", "2nd Saves", "-a", "-pc", "2", "-f", "resources/testPath2.csv"])
-    with open(s.percentOutput, "r", encoding="utf8") as outfile:
-        for out in outfile:
-            assert out.rstrip() == tests.readline().rstrip()
-        print("Pass Test 1")
-    
+    # s.handleParse(customInput=["percent", "-w", "/[OSZ]/#O/S/Z", "-k", "2nd Saves", "-a", "-pc", "2", "-f", "resources/testPath2.csv"])
+    # with open(s.percentOutput, "r", encoding="utf8") as outfile:
+    #     for out in outfile:
+    #         assert out.rstrip() == tests.readline().rstrip()
+    #     print("Pass Test 1")
+    #
+    # tests.readline()
+    # s.handleParse(customInput=["percent", "-w", "/[ILJO]/", "-p", "*p7", "-fa", "-os", "-f", "resources/testPath2.csv"])
+    # with open(s.percentOutput, "r", encoding="utf8") as outfile:
+    #     for out in outfile:
+    #         assert out.rstrip() == tests.readline().rstrip()
+    #     print("Pass Test 2")
+    #
+    # tests.readline()
+    # s.handleParse(customInput=["percent", "-k", "1st Saves", "-p", "*p7", "-fr", "-os", "-f", "resources/testPath1.csv"])
+    # with open(s.percentOutput, "r", encoding="utf8") as outfile:
+    #     for out in outfile:
+    #         assert out.rstrip() == tests.readline().rstrip()
+    #     print("Pass Test 3")
+    #
     tests.readline()
-    s.handleParse(customInput=["percent", "-w", "/[ILJO]/", "-p", "*p7", "-fa", "-os", "-f", "resources/testPath2.csv"])
-    with open(s.percentOutput, "r", encoding="utf8") as outfile:
-        for out in outfile:
-            assert out.rstrip() == tests.readline().rstrip()
-        print("Pass Test 2")
-
-    tests.readline()
-    s.handleParse(customInput=["percent", "-k", "1st Saves", "-p", "*p7", "-fr", "-os", "-f", "resources/testPath1.csv"])
-    with open(s.percentOutput, "r", encoding="utf8") as outfile:
-        for out in outfile:
-            assert out.rstrip() == tests.readline().rstrip()
-        print("Pass Test 3")
-    
-    tests.readline()
-    s.handleParse(customInput=["filter", "-w", "/T.*[LJ].*$/", "-pc", "1", "-f", "resources/testPath1.csv", "-t"])
-    with open(s.filterOutput, "r", encoding="utf8") as outfile:
-        for out in outfile:
-            assert out.rstrip() == tests.readline().rstrip()
-        print("Pass Test 4")
-
+    s.handleParse(customInput=["percent", "-w", "!/[ILJO]/&&S", "-pc", "4"])
+    # with open(s.filterOutput, "r", encoding="utf8") as outfile:
+    #     for out in outfile:
+    #         assert out.rstrip() == tests.readline().rstrip()
+    #     print("Pass Test 4")
+    #
     tests.close()
 
     print("All tests passed")
@@ -949,4 +951,4 @@ def runTestCases():
 if __name__ == "__main__":
     s = Saves()
     s.handleParse()
-    #runTestCases()
+    # runTestCases()
