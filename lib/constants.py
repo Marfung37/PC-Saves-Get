@@ -12,4 +12,4 @@ DEFAULT_PATH_FILE = path.join(DEFAULT_OUTPUT_DIR, "path.csv")
 DEFAULT_LAST_OUTPUT_FILE = path.join(DEFAULT_OUTPUT_DIR, "last_output.txt")
 DEFAULT_FILTERED_PATH_FILE = path.join(DEFAULT_OUTPUT_DIR, "filtered_path.csv")
 
-
+WANTED_SAVE_COMMENT_DELIMITOR = '#'

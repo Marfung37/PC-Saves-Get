@@ -1,31 +1,48 @@
 import argparse
 import json
-from .constants import DEFAULT_SAVES_JSON, DEFAULT_PATH_FILE, DEFAULT_LAST_OUTPUT_FILE, DEFAULT_FILTERED_PATH_FILE
+from .constants import DEFAULT_SAVES_JSON, DEFAULT_PATH_FILE, DEFAULT_LAST_OUTPUT_FILE, DEFAULT_FILTERED_PATH_FILE, WANTED_SAVE_COMMENT_DELIMITOR
 from .percent import percent
 from .utils import is_queue
+
+def parse_wanted_saves(raw_keys: list[str], raw_wanted_saves: list[str], saves_path: str) -> tuple[list[str], list[str]]:
+  # get the wanted saves
+  data = []
+  wanted_saves = []
+  labels = []
+  
+  if raw_keys:
+    with open(saves_path, 'r') as savesfile:
+      saves_map = json.loads(savesfile.read())
+    for key in raw_keys:
+      if key not in saves_map:
+        print(f"Key {key} not found in {saves_path}")
+        exit(0)
+      data += saves_map[key]
+  if raw_wanted_saves:
+    data += raw_wanted_saves
+
+  for ele in data:
+    ele_split = ele.split(WANTED_SAVE_COMMENT_DELIMITOR)
+    if len(ele_split) > 2:
+      print(f"Too many {WANTED_SAVE_COMMENT_DELIMITOR} in {ele}")
+      exit(0)
+
+    if len(ele_split) == 1:
+      wanted_save = (label := ele_split[0])
+    else:
+      wanted_save, label = ele_split
+    wanted_saves.append(wanted_save)
+    labels.append(label)
+
+  return wanted_saves, labels
 
 def parse_percent_args(args):
   '''
   Parse the arguments for percent subcommand to pass to run calculation of save percent
   '''
-
   if not (args.key or args.wanted_saves):
     print("Expected -k or -w to be set")
     exit(0)
-
-  # get the wanted saves
-  wanted_saves = []
-  if args.key:
-    with open(args.saves_path, 'r') as savesfile:
-      saves_map = json.loads(savesfile.read())
-    for k in args.key:
-      if k not in saves_map:
-        print(f"Key {k} not found in {args.saves_path}")
-        exit(0)
-
-      wanted_saves += saves_map[k]
-  if args.wanted_saves:
-    wanted_saves += args.wanted_saves
 
   # out of bounds pc number
   if args.pc_num < 1 or 9 < args.pc_num:
@@ -37,13 +54,15 @@ def parse_percent_args(args):
     print("Build Queue expected to contain only TILJSZO pieces")
     exit(0)
 
+  wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
+
   log_file = open(args.log_path, 'w')
 
   if args.best_save:
-    percent(args.path_file, wanted_saves, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves)
+    percent(args.path_file, wanted_saves, labels, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves)
   else:
-    for wanted_save in wanted_saves:
-      percent(args.path_file, [wanted_save], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves)
+    for wanted_save, label in zip(wanted_saves, labels):
+      percent(args.path_file, [wanted_save], [label], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves)
 
   log_file.close()
 

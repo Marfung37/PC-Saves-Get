@@ -6,6 +6,7 @@ from .utils import any_index
 def percent(
   filepath: str, 
   wanted_saves: list[str],
+  labels: list[str],
   build_queue: str, 
   pc_num: int, 
   log_file: TextIO,
@@ -40,9 +41,16 @@ def percent(
 
     total += 1
 
-  print_percent(wanted_saves, saveable_counters, total, log_file, console_print, fails)
+  print_percent(labels, saveable_counters, total, log_file, console_print, fails)
 
-def print_percent(wanted_saves: list[str], saveable_counters: list[int], total: int, log_file: TextIO, console_print: bool, fails: list[str]):
+def print_percent(
+  labels: list[str], 
+  saveable_counters: list[int], 
+  total: int, 
+  log_file: TextIO, 
+  console_print: bool, 
+  fails: list[str]
+):
   save_percents = [(saveable_counter / total) * 100 if total != 0 else 0 for saveable_counter in saveable_counters]
   output = ""
 
@@ -51,8 +59,8 @@ def print_percent(wanted_saves: list[str], saveable_counters: list[int], total: 
     output += "\n".join(fails)
     output += "\n\n"
 
-  for wanted_save, save_percent, saveable_counter in zip(wanted_saves, save_percents, saveable_counters):
-    output += f"{wanted_save}: {save_percent:.2f}% [{saveable_counter}/{total}]\n"
+  for label, save_percent, saveable_counter in zip(labels, save_percents, saveable_counters):
+    output += f"{label}: {save_percent:.2f}% [{saveable_counter}/{total}]\n"
 
   log_file.write(output)
 
