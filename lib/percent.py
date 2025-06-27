@@ -1,4 +1,4 @@
-from .constants import DEFAULT_LAST_OUTPUT_FILE
+from typing import TextIO
 from .saves_reader import SavesReader
 from .parser import Parser as WantedSavesParser, evaluate_ast
 
@@ -7,8 +7,8 @@ def percent(
   wanted_saves: str,
   build_queue: str, 
   pc_num: int, 
+  log_file: TextIO,
   twoline: bool = False,
-  log_path: str = DEFAULT_LAST_OUTPUT_FILE,
   console_print: bool = True,
   include_fails: bool = False
 ):
@@ -29,9 +29,9 @@ def percent(
       fails.append(row.queue)
     total += 1
 
-  print_percent(wanted_saves, saveable_counter, total, log_path, console_print, fails)
+  print_percent(wanted_saves, saveable_counter, total, log_file, console_print, fails)
 
-def print_percent(wanted_saves: str, saveable_counter: int, total: int, log_path: str, console_print: bool, fails: list[str]):
+def print_percent(wanted_saves: str, saveable_counter: int, total: int, log_file: TextIO, console_print: bool, fails: list[str]):
   save_percent = (saveable_counter / total) * 100
   output = ""
 
@@ -42,7 +42,6 @@ def print_percent(wanted_saves: str, saveable_counter: int, total: int, log_path
 
   output += f"{wanted_saves}: {save_percent:.2f}% [{saveable_counter}/{total}]"
 
-  with open(log_path, "w") as logfile:
-    logfile.write(output + '\n')
+  log_file.write(output + '\n')
 
   if console_print: print(output)

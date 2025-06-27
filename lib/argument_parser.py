@@ -20,8 +20,10 @@ def parse_percent_args(args):
     print("Build Queue expected to contain only TILJSZO pieces")
     exit(0)
 
+  log_file = open(args.log_path, 'w')
+
   for wanted_save in wanted_saves:
-    percent(args.path_file, wanted_save, args.build_queue, args.pc_num, args.two_line, args.log_path, args.console_print, args.fails)
+    percent(args.path_file, wanted_save, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails)
 
 arg_parser = argparse.ArgumentParser(usage="<cmd> [options]", description="A tool for further expansion of the saves from path.csv")
 arg_subparsers = arg_parser.add_subparsers()
