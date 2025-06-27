@@ -1,8 +1,10 @@
 import csv
 from collections import Counter
-from formulas import PCNUM2LONUM, LONUM2BAGCOMP
-from utils import fumen_get_comments, sort_queue
-from constants import BAG, PCSIZE, HOLD
+from dataclasses import dataclass
+from typing import Optional
+from .formulas import PCNUM2LONUM, LONUM2BAGCOMP
+from .utils import fumen_get_comments, sort_queue
+from .constants import BAG, PCSIZE, HOLD
 
 VALID_4L_PCSIZE = {PCSIZE, PCSIZE + HOLD}
 VALID_2L_PCSIZE = {PCSIZE // 2, PCSIZE // 2 + HOLD}
@@ -11,10 +13,17 @@ COLUMN_QUEUE = 'ツモ'
 COLUMN_FUMEN_COUNT = '対応地形数'
 COLUMN_USED_PIECES = '使用ミノ'
 COLUMN_UNUSED_PIECES = '未使用ミノ'
+COLUMN_UNUSED_PIECES_DELIMITOR = ';'
 COLUMN_FUMENS = 'テト譜'
 COLUMN_FUMENS_DELIMITOR = ';'
 
 REQUIRED_COLUMNS = {COLUMN_QUEUE, COLUMN_UNUSED_PIECES, COLUMN_FUMENS}
+
+@dataclass
+class SavesRow:
+  saves: list[str]
+  queue: Optional[str] = None
+  fumens: Optional[list[list[str]]] = None
 
 class SavesReader:
   def __init__(self, filepath: str, build_queue: str, pc_num: int, twoline: bool = False):
@@ -36,7 +45,7 @@ class SavesReader:
     self._file.close()
     del self._file
 
-  def read(self, assign_fumens: bool = False):
+  def read(self, assign_queue: bool = False, assign_fumens: bool = False):
     for row in self.reader:
       saves = []
       save_fumens = []
@@ -50,7 +59,7 @@ class SavesReader:
       # get the rest of the pieces in the last bag
       unused_last_bag = set(BAG) - set(full_queue[self.leading_size:])
 
-      for unused_piece in row[COLUMN_UNUSED_PIECES]:
+      for unused_piece in row[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR):
         save = ''.join(unused_last_bag) + unused_piece
         save = sort_queue(save)
         saves.append(save)
@@ -66,10 +75,11 @@ class SavesReader:
               curr_save_fumens.append(fumen)
           save_fumens.append(curr_save_fumens)
 
-      if assign_fumens:
-        yield saves, save_fumens
-      else:
-        yield saves
+      save_row = SavesRow(saves)
+      if assign_queue: save_row.queue = row[COLUMN_QUEUE]
+      if assign_fumens: save_row.fumens = save_fumens
+
+      yield save_row
 
 if __name__ == '__main__':
   reader = SavesReader('../output/path.csv', 'OILJO', 3, True)

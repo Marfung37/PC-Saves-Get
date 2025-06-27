@@ -9,7 +9,7 @@ TOKEN_SPEC = [
   ('AVOID',    r'\^'),
   ('LPAREN',   r'\('),
   ('RPAREN',   r'\)'),
-  ('REGEX',    r'(?<=/)([^/\\]|\\.)+(?=/)'), # regex within forward slashes, ie /abc/
+  ('REGEX',    r'/[^/]+/'), # regex within forward slashes, ie /abc/
   ('PIECES',   r'[TILJSZO]+'),
   ('WS',       r'\s+'),  # Skip whitespace
 ]
@@ -53,13 +53,30 @@ class RegexLiteral(AST):
   def __repr__(self):
     return f"Regex(`{self.value}`)"
 
+def tokenize(text):
+  tokens = []
+  for match in token_re.finditer(text):
+    kind = match.lastgroup
+    value = match.group()
+    if kind == 'WS':
+      continue  # skip whitespace
+    if kind == 'REGEX':
+      value = value[1:-1] # strip forward slashes
+    tokens.append(Token(kind, value))
+
+  if len(tokens) == 0:
+    raise ValueError(f"Expression {text} could not be tokenized")
+
+  return tokens
+
 class Parser:
   """
   Recursive Descent Parser with precedence OR, AND, NOT, AVOID, ATOMIC
   """
-  def __init__(self):
+  def __init__(self, lexer: Callable[[str], list[Token]] = tokenize):
     self._tokens = []
     self._pos = 0
+    self._lexer = lexer
 
   def _peek(self) -> Token:
     return self._tokens[self._pos] if self._pos < len(self._tokens) else Token()
@@ -71,7 +88,9 @@ class Parser:
     self._pos += 1
     return token
 
-  def parse(self, expr: str, lexer: Callable[[str], list[Token]]) -> AST:
+  def parse(self, expr: str, lexer: Callable[[str], list[Token]] | None = None) -> AST:
+    if lexer is None:
+      lexer = self._lexer
     self._tokens = lexer(expr)
     self._pos = 0
     return self._parse_tokens()
@@ -177,20 +196,6 @@ def evaluate_ast(node, saves: list[str]) -> bool:
 
   raise ValueError(f"Unknown AST node type or operation: {type(node)}")
 
-def tokenize(text):
-  tokens = []
-  for match in token_re.finditer(text):
-    kind = match.lastgroup
-    value = match.group()
-    if kind == 'WS':
-      continue  # skip whitespace
-    tokens.append(Token(kind, value))
-
-  if len(tokens) == 0:
-    raise ValueError(f"Expression {text} could not be tokenized")
-
-  return tokens
-
 if __name__ == "__main__":
   parser = Parser()
 
@@ -218,6 +223,13 @@ if __name__ == "__main__":
   result3 = evaluate_ast(ast2, saves3)
   print(f"Evaluate with {saves3}: {result3}") # Expected: T || F -> T
 
+  expr3 = r'/T[^T]/||/^[^LJ]*[LJ]{2}[^LJ]*$/||/^[^LJ]+$/'
+  print(f"\nParsing: '{expr3}'")
+  ast3 = parser.parse(expr3, tokenize)
+  print(f"AST: {ast3}")
+
   # Expect to error
-  ast3 = parser.parse('abc', tokenize)
+  ast4 = parser.parse('abc', tokenize)
   print(ast3)
+
+

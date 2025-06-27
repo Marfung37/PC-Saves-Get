@@ -1,4 +1,6 @@
 import py_fumen_py as pf
+import re
+from .constants import BAG
 
 PIECEVALS = {
   'T': 1,
@@ -64,20 +66,21 @@ def fumen_get_comments(fumen: str):
   return comments
 
 def sort_queue(queue: str) -> str:
-    '''
-    Sort a queue with TILJSZO ordering
+  '''
+  Sort a queue with TILJSZO ordering
 
-    Parameter:
-        queue (str): A queue with pieces in {T,I,L,J,S,Z,O}
+  Parameter:
+      queue (str): A queue with pieces in {T,I,L,J,S,Z,O}
 
-    Return:
-        str: a sorted queue following TILJSZO ordering
+  Return:
+      str: a sorted queue following TILJSZO ordering
 
-    '''
+  '''
 
-    sorted_queue_gen = sorted(queue, key=lambda x: PIECEVALS[x])
-    sorted_queue = ''.join(list(sorted_queue_gen))
+  sorted_queue_gen = sorted(queue, key=lambda x: PIECEVALS[x])
+  sorted_queue = ''.join(list(sorted_queue_gen))
 
-    return sorted_queue
+  return sorted_queue
 
-
+def is_queue(text: str) -> bool:
+  return re.match(f'^[{BAG}]+$', text) is not None
