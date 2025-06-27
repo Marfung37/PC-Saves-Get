@@ -22,6 +22,7 @@ REQUIRED_COLUMNS = {COLUMN_QUEUE, COLUMN_UNUSED_PIECES, COLUMN_FUMENS}
 @dataclass
 class SavesRow:
   saves: list[str]
+  solveable: bool
   queue: Optional[str] = None
   fumens: Optional[list[list[str]]] = None
 
@@ -50,6 +51,14 @@ class SavesReader:
       saves = []
       save_fumens = []
 
+      solveable = row[COLUMN_FUMENS] != ''
+      if not solveable:
+        save_row = SavesRow([], solveable)
+        if assign_queue: save_row.queue = row[COLUMN_QUEUE]
+        if assign_fumens: save_row.fumens = []
+        yield save_row
+        continue
+
       full_queue = self.build_queue + row[COLUMN_QUEUE]
 
       # check if valid length
@@ -75,7 +84,7 @@ class SavesReader:
               curr_save_fumens.append(fumen)
           save_fumens.append(curr_save_fumens)
 
-      save_row = SavesRow(saves)
+      save_row = SavesRow(saves, solveable)
       if assign_queue: save_row.queue = row[COLUMN_QUEUE]
       if assign_fumens: save_row.fumens = save_fumens
 

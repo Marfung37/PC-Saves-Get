@@ -1,6 +1,7 @@
 import py_fumen_py as pf
 import re
 from .constants import BAG
+from typing import Iterable
 
 PIECEVALS = {
   'T': 1,
@@ -84,3 +85,9 @@ def sort_queue(queue: str) -> str:
 
 def is_queue(text: str) -> bool:
   return re.match(f'^[{BAG}]+$', text) is not None
+
+def any_index(seq: Iterable[bool]) -> int | None:
+  '''
+  Returns the first truthy index
+  '''
+  return next((i for i, v in enumerate(seq) if v), None)

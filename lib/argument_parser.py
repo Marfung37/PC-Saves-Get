@@ -22,8 +22,13 @@ def parse_percent_args(args):
 
   log_file = open(args.log_path, 'w')
 
-  for wanted_save in wanted_saves:
-    percent(args.path_file, wanted_save, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails)
+  if args.best_save:
+    percent(args.path_file, wanted_saves, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves)
+  else:
+    for wanted_save in wanted_saves:
+      percent(args.path_file, [wanted_save], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves)
+
+  log_file.close()
 
 arg_parser = argparse.ArgumentParser(usage="<cmd> [options]", description="A tool for further expansion of the saves from path.csv")
 arg_subparsers = arg_parser.add_subparsers()
@@ -42,7 +47,7 @@ percent_parser.add_argument("-f", "--path-file", help="path file directory (defa
 percent_parser.add_argument("-lp", "--log-path", help="output file directory (default: output/last_output.txt)", metavar="<directory>", default=DEFAULT_LAST_OUTPUT_FILE, type=str)
 percent_parser.add_argument("-pr", "--console-print", help="log to terminal (default: True)", action="store_false")
 percent_parser.add_argument("-fa", "--fails", help="include the fail queues for saves in output (default: False)", action="store_true")
-# percent_parser.add_argument("-os", "--over-solves", help="have the percents be saves/solves (default: False)", action="store_true")
+percent_parser.add_argument("-os", "--over-solves", help="have the percents be out of when setup is solvable (default: False)", action="store_true")
 
 filter_parser = arg_subparsers.add_parser("filter", help="filter path.csv of fumens that doesn't meet the wanted saves")
 filter_parser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
