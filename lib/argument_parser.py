@@ -40,8 +40,8 @@ def parse_percent_args(args):
   '''
   Parse the arguments for percent subcommand to pass to run calculation of save percent
   '''
-  if not (args.key or args.wanted_saves):
-    print("Expected -k or -w to be set")
+  if not (args.key or args.wanted_saves or args.all):
+    print("Expected -k, -w, or -a to be set")
     exit(0)
 
   # out of bounds pc number
@@ -54,15 +54,19 @@ def parse_percent_args(args):
     print("Build Queue expected to contain only TILJSZO pieces")
     exit(0)
 
+  log_file = open(args.log_path, 'w')
+  if args.all:
+    percent(args.path_file, [], [], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, args.all)
+    log_file.close()
+    return
+
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
-  log_file = open(args.log_path, 'w')
-
   if args.best_save:
-    percent(args.path_file, wanted_saves, labels, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves)
+    percent(args.path_file, wanted_saves, labels, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False)
   else:
     for wanted_save, label in zip(wanted_saves, labels):
-      percent(args.path_file, [wanted_save], [label], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves)
+      percent(args.path_file, [wanted_save], [label], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False)
 
   log_file.close()
 
@@ -71,9 +75,9 @@ arg_subparsers = arg_parser.add_subparsers()
 
 percent_parser = arg_subparsers.add_parser("percent", help="Give the percents of saves using the path.csv file with wanted save expression")
 percent_parser.set_defaults(func=parse_percent_args)
-percent_parser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
-percent_parser.add_argument("-k", "--key", help="use preset wanted saves in the saves json (required if there isn't a -w)", metavar="<string>", nargs='+')
-# percent_parser.add_argument("-a", "--all", help="output all of the saves and corresponding percents (alternative to not having -k nor -w)", action="store_true")
+percent_parser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k nor -a)", metavar="<string>", nargs='+')
+percent_parser.add_argument("-k", "--key", help="use preset wanted saves in the saves json (required if there isn't a -w nor -a)", metavar="<string>", nargs='+')
+percent_parser.add_argument("-a", "--all", help="output all of the saves and corresponding percents (alternative to not having -k nor -w)", action="store_true")
 percent_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
 percent_parser.add_argument("-q", "--build-queue", help="queue of pieces in build order following bags for pc", metavar="<string>", type=str, required=True)
 percent_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)

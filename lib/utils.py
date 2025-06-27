@@ -86,6 +86,9 @@ def sort_queue(queue: str) -> str:
 def is_queue(text: str) -> bool:
   return re.match(f'^[{BAG}]+$', text) is not None
 
+def queue_val(queue: str) -> int:
+  return int(''.join((str(PIECEVALS[p]) for p in queue)))
+
 def any_index(seq: Iterable[bool]) -> int | None:
   '''
   Returns the first truthy index

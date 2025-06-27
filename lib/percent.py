@@ -1,7 +1,7 @@
 from typing import TextIO
 from .saves_reader import SavesReader
 from .parser import Parser as WantedSavesParser, evaluate_ast
-from .utils import any_index
+from .utils import any_index, queue_val
 
 def percent(
   filepath: str, 
@@ -13,11 +13,13 @@ def percent(
   twoline: bool = False,
   console_print: bool = True,
   include_fails: bool = False,
-  over_solves: bool = False
+  over_solves: bool = False,
+  all_saves: bool = False
 ):
   saveable_counters = [0] * len(wanted_saves)
   total = 0
   fails = []
+  all_saves_dict: dict[str, int] = {}
 
   wanted_saves_parser = WantedSavesParser() 
   asts = []
@@ -31,13 +33,23 @@ def percent(
     # ignore rows that aren't solveable if out of solves
     if over_solves and not row.solveable:
       continue
+    
+    if all_saves:
+      # all saves will store the saves in a dict
+      for save in row.saves:
+        if save not in all_saves_dict:
+          all_saves_dict[save] = 1
+        else:
+          all_saves_dict[save] += 1
+      # sort items of the dict
+      labels, saveable_counters = [list(t) for t in zip(*sorted(all_saves_dict.items(), key=lambda x: queue_val(x[0])))]
+    else:
+      index = any_index(map(lambda ast: evaluate_ast(ast, row.saves), asts))
 
-    index = any_index(map(lambda ast: evaluate_ast(ast, row.saves), asts))
-
-    if index is not None:
-      saveable_counters[index] += 1
-    elif include_fails:
-      fails.append(row.queue)
+      if index is not None:
+        saveable_counters[index] += 1
+      elif include_fails:
+        fails.append(row.queue)
 
     total += 1
 
