@@ -63,10 +63,10 @@ def parse_percent_args(args):
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
   if args.best_save:
-    percent(args.path_file, wanted_saves, labels, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False)
+    percent(args.path_file, wanted_saves, labels, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
   else:
     for wanted_save, label in zip(wanted_saves, labels):
-      percent(args.path_file, [wanted_save], [label], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False)
+      percent(args.path_file, [wanted_save], [label], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
 
   log_file.close()
 
@@ -82,7 +82,7 @@ percent_parser.add_argument("-bs", "--best-save", help="instead of listing each 
 percent_parser.add_argument("-q", "--build-queue", help="queue of pieces in build order following bags for pc", metavar="<string>", type=str, required=True)
 percent_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)
 percent_parser.add_argument("-tl", "--two-line", help="setup is two lines (default: False)", action="store_true")
-# percent_parser.add_argument("-td", "--tree-depth", help="set the tree depth of pieces in percent (default: 0)", metavar="<int>", type=int, default=0)
+percent_parser.add_argument("-td", "--tree-depth", help="set the tree depth of pieces in percent (default: 0)", metavar="<int>", type=int, default=0)
 percent_parser.add_argument("-f", "--path-file", help="path file directory (default: output/path.csv)", metavar="<directory>", default=DEFAULT_PATH_FILE, type=str)
 percent_parser.add_argument("-lp", "--log-path", help="output file directory (default: output/last_output.txt)", metavar="<directory>", default=DEFAULT_LAST_OUTPUT_FILE, type=str)
 percent_parser.add_argument("-sp", "--saves-path", help="path to json file with preset wanted saves (default: GITROOT/saves.json)", metavar="<directory>", default=DEFAULT_SAVES_JSON, type=str)
