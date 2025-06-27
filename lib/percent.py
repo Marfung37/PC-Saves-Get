@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from .saves_reader import SavesReader
 from .parser import Parser as WantedSavesParser, evaluate_ast
 from .utils import any_index, queue_val, sort_queue
-from .constants import BAG
 
 @dataclass
 class PercentNode:
@@ -30,7 +29,7 @@ class PercentNode:
       return self
     else:
       raise TypeError(
-        "unsupported operand for +: "
+        "unsupported operand for +=: "
         f"'{type(self).__name__}' and '{type(other).__name__}'"
       )
 
