@@ -2,6 +2,7 @@ import argparse
 import json
 from .constants import DEFAULT_SAVES_JSON, DEFAULT_PATH_FILE, DEFAULT_LAST_OUTPUT_FILE, DEFAULT_FILTERED_PATH_FILE, WANTED_SAVE_COMMENT_DELIMITOR
 from .percent import percent
+from .filter import filter
 from .utils import is_queue
 
 def parse_wanted_saves(raw_keys: list[str], raw_wanted_saves: list[str], saves_path: str) -> tuple[list[str], list[str]]:
@@ -70,6 +71,35 @@ def parse_percent_args(args):
 
   log_file.close()
 
+def parse_filter_args(args):
+  '''
+  Parse the arguments for filter subcommand to pass to filter out path file
+  '''
+  if not (args.key or args.wanted_saves):
+    print("Expected -k or -w to be set")
+    exit(0)
+
+  # out of bounds pc number
+  if args.pc_num < 1 or 9 < args.pc_num:
+    print("PC Number expected to be within 1-9")
+    exit(0)
+
+  # build uses only pieces in TILJSZO
+  if not is_queue(args.build_queue):
+    print("Build Queue expected to contain only TILJSZO pieces")
+    exit(0)
+
+  log_file = open(args.log_path, 'w')
+
+  wanted_saves, _ = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
+
+  if args.best_save:
+    filter(args.path_file, args.filtered_path, wanted_saves, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl, args.fumen_code)
+  else:
+    filter(args.path_file, args.filtered_path, [wanted_saves[0]], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl, args.fumen_code)
+
+  log_file.close()
+
 arg_parser = argparse.ArgumentParser(usage="<cmd> [options]", description="A tool for further expansion of the saves from path.csv")
 arg_subparsers = arg_parser.add_subparsers()
 
@@ -91,9 +121,10 @@ percent_parser.add_argument("-fa", "--fails", help="include the fail queues for 
 percent_parser.add_argument("-os", "--over-solves", help="have the percents be out of when setup is solvable (default: False)", action="store_true")
 
 filter_parser = arg_subparsers.add_parser("filter", help="filter path.csv of fumens that doesn't meet the wanted saves")
+filter_parser.set_defaults(func=parse_filter_args)
 filter_parser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
 filter_parser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
-filter_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
+filter_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (default: False)", action="store_true")
 # filter_parser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default='')", default=None, metavar="<string>", nargs='*')
 filter_parser.add_argument("-q", "--build-queue", help="queue of pieces in build order following bags for pc", metavar="<string>", type=str, required=True)
 filter_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)

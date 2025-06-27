@@ -94,3 +94,9 @@ def any_index(seq: Iterable[bool]) -> int | None:
   Returns the first truthy index
   '''
   return next((i for i, v in enumerate(seq) if v), None)
+
+def all_index(seq: Iterable[bool]) -> list[int]:
+  '''
+  Returns all truthy indicies
+  '''
+  return [i for i, val in enumerate(seq) if val]

@@ -1,6 +1,7 @@
 import re
 from collections import Counter
 from collections.abc import Callable
+from .utils import all_index
 
 TOKEN_SPEC = [
   ('OR',       r'\|\|'),
@@ -193,6 +194,42 @@ def evaluate_ast(node, saves: list[str]) -> bool:
 
     # evaluate and return right side otherwise
     return evaluate_ast(node.right, saves)
+
+  raise ValueError(f"Unknown AST node type or operation: {type(node)}")
+
+def evaluate_ast_all(node, saves: list[str]) -> list[int]:
+  if isinstance(node, PiecesLiteral):
+    # if save within any of the saves
+    wantedSaveCount = Counter(node.value)
+    return all_index(map(lambda save: wantedSaveCount <= Counter(save), saves))
+
+  elif isinstance(node, RegexLiteral):
+    try:
+      # Compile the regex and check for a match
+      pattern = re.compile(node.value)
+      return all_index(map(lambda save: bool(pattern.search(save)), saves))
+    except re.error as e:
+      raise ValueError(f"Invalid regex: '{node.value}' - {e}")
+  elif isinstance(node, UnaryOp):
+    if node.op == 'NOT':
+      return list(set(range(len(saves))) - set(evaluate_ast_all(node.expr, saves)))
+    elif node.op == 'AVOID':
+      # if there is at least one that is not the expression
+      return all_index(map(lambda save: not evaluate_ast_all(node.expr, [save]), saves))
+
+  elif isinstance(node, BinaryOp):
+    # Evaluate left side first
+    left_val = evaluate_ast_all(node.left, saves)
+
+    # short circuit if possible
+    if node.op == 'AND' and not left_val:
+      return []
+
+    elif node.op == 'OR' and left_val:
+      return left_val
+
+    # evaluate and return right side otherwise
+    return evaluate_ast_all(node.right, saves)
 
   raise ValueError(f"Unknown AST node type or operation: {type(node)}")
 

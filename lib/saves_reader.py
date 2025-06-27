@@ -25,6 +25,7 @@ class SavesRow:
   solveable: bool
   queue: str
   fumens: Optional[list[list[str]]] = None
+  line: Optional[dict[str, str]] = None
 
 class SavesReader:
   def __init__(self, filepath: str, build_queue: str, pc_num: int, twoline: bool = False):
@@ -46,7 +47,7 @@ class SavesReader:
     self._file.close()
     del self._file
 
-  def read(self, assign_fumens: bool = False):
+  def read(self, assign_fumens: bool = False, assign_line: bool = False):
     for row in self.reader:
       saves = []
       save_fumens = []
@@ -55,6 +56,7 @@ class SavesReader:
       if not solveable:
         save_row = SavesRow([], solveable, row[COLUMN_QUEUE])
         if assign_fumens: save_row.fumens = []
+        if assign_line: save_row.line = row
         yield save_row
         continue
 
@@ -85,6 +87,7 @@ class SavesReader:
 
       save_row = SavesRow(saves, solveable, row[COLUMN_QUEUE])
       if assign_fumens: save_row.fumens = save_fumens
+      if assign_line: save_row.line = row
 
       yield save_row
 
