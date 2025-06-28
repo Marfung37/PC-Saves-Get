@@ -1,6 +1,6 @@
 import argparse
 import json
-from .constants import DEFAULT_SAVES_JSON, DEFAULT_PATH_FILE, DEFAULT_LAST_OUTPUT_FILE, DEFAULT_FILTERED_PATH_FILE, WANTED_SAVE_COMMENT_DELIMITOR
+from .constants import DEFAULT_SAVES_JSON, DEFAULT_PATH_FILE, DEFAULT_LAST_OUTPUT_FILE, DEFAULT_FILTERED_PATH_FILE, WANTED_SAVE_COMMENT_DELIMITOR, WANTED_SAVE_DELIMITOR
 from .percent import percent
 from .filter import filter
 from .utils import is_queue
@@ -21,7 +21,8 @@ def parse_wanted_saves(raw_keys: list[str], raw_wanted_saves: list[str], saves_p
         exit(0)
       data += saves_map[key]
   if raw_wanted_saves:
-    data += raw_wanted_saves
+    for raw_wanted_save in raw_wanted_saves:
+      data += raw_wanted_save.split(WANTED_SAVE_DELIMITOR)
 
   for ele in data:
     ele_split = ele.split(WANTED_SAVE_COMMENT_DELIMITOR)
