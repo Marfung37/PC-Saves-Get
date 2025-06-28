@@ -1,5 +1,4 @@
 import csv
-from collections import Counter
 from dataclasses import dataclass
 from typing import Optional
 from .formulas import PCNUM2LONUM, LONUM2BAGCOMP
