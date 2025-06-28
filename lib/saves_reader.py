@@ -82,7 +82,7 @@ class SavesReader:
         raise RuntimeError(f"Full queue could not produce a {'2' if self.twoline else '4'}l PC. Likely build {self.build} is too short and thus inaccurate")
 
       # get the rest of the pieces in the last bag
-      unseen_last_bag_part = self.unused_last_bag - set(full_queue[self.leading_size:])
+      unseen_last_bag_part = self.unused_last_bag - set(full_queue[max(self.leading_size, len(self.build)):])
       
       queue_value = sum(map(ord, row[COLUMN_QUEUE]))
       for unused_piece in row[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR):
