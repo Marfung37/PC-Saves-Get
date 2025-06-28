@@ -48,7 +48,7 @@ class SavesReader:
 
     bag_comp = LONUM2BAGCOMP(PCNUM2LONUM(pc_num), 6 if twoline else 11)
     self.unused_last_bag = _get_unused_last_bag(build, leftover, bag_comp)
-    self.leading_size = sum(bag_comp[:-1])
+    self.leading_size = max(sum(bag_comp[:-1]), len(build))
 
     self._file = open(filepath, 'r')
     self.reader = csv.DictReader(self._file)
@@ -82,7 +82,7 @@ class SavesReader:
         raise RuntimeError(f"Full queue could not produce a {'2' if self.twoline else '4'}l PC. Likely build {self.build} is too short and thus inaccurate")
 
       # get the rest of the pieces in the last bag
-      unseen_last_bag_part = self.unused_last_bag - set(full_queue[max(self.leading_size, len(self.build)):])
+      unseen_last_bag_part = self.unused_last_bag - set(full_queue[self.leading_size:])
       
       queue_value = sum(map(ord, row[COLUMN_QUEUE]))
       for unused_piece in row[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR):
