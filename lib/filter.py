@@ -8,6 +8,7 @@ from .utils import fumen_combine, fumen_combine_comments, make_fumen_url, make_t
 
 PATH_COLUMNS = [COLUMN_QUEUE, COLUMN_FUMEN_COUNT, COLUMN_USED_PIECES, COLUMN_UNUSED_PIECES, COLUMN_FUMENS]
 STRICT_MINIMAL_FILENAME = "path_minimal_strict.md"
+STRICT_MINIMAL_QUEUE_DELIMITOR = ","
 
 def filter(
   filepath: str, 
@@ -86,9 +87,10 @@ def filter(
     if console_print:
       print(unique_solves)
   elif output_type == "minimal":
-    generate_minimals(labels, output_path, log_file, console_print, tinyurl)
+    generate_minimals(labels, output_path, log_file, console_print, tinyurl, cumulative_percent)
 
-def read_strict_minimals(filepath: str) -> str:
+def read_strict_minimals(filepath: str, cumulative_percent: bool = False) -> str:
+
   with open(filepath, "r") as infile:
     lines = infile.readlines()
 
@@ -97,26 +99,62 @@ def read_strict_minimals(filepath: str) -> str:
     raise RuntimeError("Expected success rate in strict minimals file but not found")
 
   total = int(re_success.group(1))
+  fumens = re.findall("(v115@[a-zA-Z0-9?/+]*)", lines[6])
+
   percents = []
-  for line in lines[13::9]:
-    re_cover = re.match(r"(\d+)", line)
-    if re_cover is None:
-      raise RuntimeError("Expected number of cover in strict minimals file but not found")
+  if cumulative_percent:
+    queue_set = set()
+    cover_queues = []
+    # get sets of the queues the solves cover
+    for line in lines[16::9]:
+      cover_queues.append(set(line.split(STRICT_MINIMAL_QUEUE_DELIMITOR)))
 
-    cover_count = int(re_cover.group(1))
-
-    percent = cover_count / total * 100
-    percent = f'{percent:.2f}% ({cover_count}/{total})'
+    # greedy find the solve with most coverage
+    # first one, always first fumen has equally most coverage
+    indicies = [0]
+    queue_set |= cover_queues[0]
+    percent = len(cover_queues[0]) / total * 100
+    percent = f'{percent:.2f}% ({len(cover_queues[0])}/{total})'
     percents.append(percent)
 
-  fumens = re.findall("(v115@[a-zA-Z0-9?/+]*)", lines[6])
+    # get the solve with largest remaining cover
+    for _ in range(len(cover_queues) - 1):
+      largest_size = 0
+      largest_index = -1
+      for i in range(len(cover_queues)):
+        if i in indicies:
+          continue
+        new_set = queue_set - cover_queues[i]
+        if len(new_set) > largest_size:
+          largest_size = len(new_set)
+          largest_index = i
+      queue_set |= cover_queues[largest_index]
+      cover_count = len(queue_set)
+      percent = cover_count / total * 100
+      percent = f'{percent:.2f}% ({cover_count}/{total})'
+      percents.append(percent)
+      indicies.append(largest_index)
+
+    fumens = [fumens[i] for i in indicies]
+  else:
+    for line in lines[13::9]:
+      re_cover = re.match(r"(\d+)", line)
+      if re_cover is None:
+        raise RuntimeError("Expected number of cover in strict minimals file but not found")
+
+      cover_count = int(re_cover.group(1))
+
+      percent = cover_count / total * 100
+      percent = f'{percent:.2f}% ({cover_count}/{total})'
+      percents.append(percent)
+
   return fumen_combine_comments(fumens, percents)
 
-def generate_minimals(labels: list[str], filtered_path: str, log_file: TextIO, console_print: bool, tinyurl: bool):
+def generate_minimals(labels: list[str], filtered_path: str, log_file: TextIO, console_print: bool, tinyurl: bool, cumulative_percent: bool):
   result = subprocess.run(['sfinder-minimal', filtered_path], capture_output=True, text=True)
   log_file.write(result.stdout)
 
-  fumen = read_strict_minimals(STRICT_MINIMAL_FILENAME)
+  fumen = read_strict_minimals(STRICT_MINIMAL_FILENAME, cumulative_percent)
 
   line = fumen
   if tinyurl:
