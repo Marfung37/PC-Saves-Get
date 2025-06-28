@@ -4,6 +4,7 @@ from .constants import DEFAULT_SAVES_JSON, DEFAULT_PATH_FILE, DEFAULT_LAST_OUTPU
 from .percent import percent
 from .filter import filter
 from .utils import is_queue
+from .formulas import PCNUM2LONUM
 
 def parse_wanted_saves(raw_keys: list[str], raw_wanted_saves: list[str], saves_path: str) -> tuple[list[str], list[str]]:
   # get the wanted saves
@@ -51,23 +52,28 @@ def parse_percent_args(args):
     exit(0)
 
   # build uses only pieces in TILJSZO
-  if not is_queue(args.build_queue):
-    print("Build Queue expected to contain only TILJSZO pieces")
+  if not is_queue(args.build) or not is_queue(args.leftover):
+    print("Build and Leftover expected to contain only TILJSZO pieces")
+    exit(0)
+
+  # leftover isn't right length
+  if len(args.leftover) != PCNUM2LONUM(args.pc_num):
+    print(f"Leftover expected to contain {PCNUM2LONUM(args.pc_num)} pieces for pc {args.pc_num}")
     exit(0)
 
   log_file = open(args.log_path, 'w')
   if args.all:
-    percent(args.path_file, [], [], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, args.all)
+    percent(args.path_file, [], [], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, args.all)
     log_file.close()
     return
 
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
   if args.best_save:
-    percent(args.path_file, wanted_saves, labels, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+    percent(args.path_file, wanted_saves, labels, args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
   else:
     for wanted_save, label in zip(wanted_saves, labels):
-      percent(args.path_file, [wanted_save], [label], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+      percent(args.path_file, [wanted_save], [label], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
 
   log_file.close()
 
@@ -85,8 +91,13 @@ def parse_filter_args(args):
     exit(0)
 
   # build uses only pieces in TILJSZO
-  if not is_queue(args.build_queue):
-    print("Build Queue expected to contain only TILJSZO pieces")
+  if not is_queue(args.build) or not is_queue(args.leftover):
+    print("Build and Leftover expected to contain only TILJSZO pieces")
+    exit(0)
+
+  # leftover isn't right length
+  if len(args.leftover) != PCNUM2LONUM(args.pc_num):
+    print(f"Leftover expected to contain {PCNUM2LONUM(args.pc_num)} pieces for pc {args.pc_num}")
     exit(0)
 
   log_file = open(args.log_path, 'w')
@@ -94,9 +105,9 @@ def parse_filter_args(args):
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
   if args.best_save:
-    filter(args.path_file, args.filtered_path, wanted_saves, labels, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
+    filter(args.path_file, args.filtered_path, wanted_saves, labels, args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
   else:
-    filter(args.path_file, args.filtered_path, [wanted_saves[0]], [labels[0]], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
+    filter(args.path_file, args.filtered_path, [wanted_saves[0]], [labels[0]], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
 
   log_file.close()
 
@@ -109,7 +120,8 @@ percent_parser.add_argument("-w", "--wanted-saves", help="the save expression (r
 percent_parser.add_argument("-k", "--key", help="use preset wanted saves in the saves json (required if there isn't a -w nor -a)", metavar="<string>", nargs='+')
 percent_parser.add_argument("-a", "--all", help="output all of the saves and corresponding percents (alternative to not having -k nor -w)", action="store_true")
 percent_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
-percent_parser.add_argument("-q", "--build-queue", help="queue of pieces in build order following bags for pc", metavar="<string>", type=str, required=True)
+percent_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
+percent_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
 percent_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)
 percent_parser.add_argument("-tl", "--two-line", help="setup is two lines (default: False)", action="store_true")
 percent_parser.add_argument("-td", "--tree-depth", help="set the tree depth of pieces in percent (default: 0)", metavar="<int>", type=int, default=0)
@@ -126,7 +138,8 @@ filter_parser.add_argument("-w", "--wanted-saves", help="the save expression (re
 filter_parser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
 filter_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (default: False)", action="store_true")
 # filter_parser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default='')", default=None, metavar="<string>", nargs='*')
-filter_parser.add_argument("-q", "--build-queue", help="queue of pieces in build order following bags for pc", metavar="<string>", type=str, required=True)
+filter_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
+filter_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
 filter_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)
 filter_parser.add_argument("-tl", "--two-line", help="setup is two lines (default: False)", action="store_true")
 filter_parser.add_argument("-c", "--cumulative", help="gives percents cumulatively in fumens of a minimal set (default: False)", action="store_true")

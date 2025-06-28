@@ -1,4 +1,5 @@
 import csv
+from collections import Counter
 from dataclasses import dataclass
 from typing import Optional
 from .formulas import PCNUM2LONUM, LONUM2BAGCOMP
@@ -18,6 +19,17 @@ COLUMN_FUMENS_DELIMITOR = ';'
 
 REQUIRED_COLUMNS = {COLUMN_QUEUE, COLUMN_UNUSED_PIECES, COLUMN_FUMENS}
 
+def _get_unused_last_bag(build: str, leftover: str, bag_comp: list[int]) -> set[str]:
+  if len(bag_comp) < 3:
+    last_bag_pieces_used = Counter(build) - Counter(leftover)
+  else:
+    last_bag_pieces_used = Counter(build) - Counter(leftover + BAG)
+
+  # the pieces used can at most have one of each piece
+  unused_last_bag = Counter(BAG) - last_bag_pieces_used
+
+  return set(unused_last_bag.elements())
+
 @dataclass
 class SavesRow:
   saves: list[str]
@@ -27,13 +39,15 @@ class SavesRow:
   line: Optional[dict[str, str]] = None
 
 class SavesReader:
-  def __init__(self, filepath: str, build_queue: str, pc_num: int, twoline: bool = False):
+  def __init__(self, filepath: str, build: str, leftover: str, pc_num: int, twoline: bool = False):
     self.filepath = filepath
-    self.build_queue = build_queue
+    self.build = build
+    self.leftover = leftover
     self.pc_num = pc_num
     self.twoline = twoline
 
     bag_comp = LONUM2BAGCOMP(PCNUM2LONUM(pc_num), 6 if twoline else 11)
+    self.unused_last_bag = _get_unused_last_bag(build, leftover, bag_comp)
     self.leading_size = sum(bag_comp[:-1])
 
     self._file = open(filepath, 'r')
@@ -61,18 +75,18 @@ class SavesReader:
         yield save_row
         continue
 
-      full_queue = self.build_queue + row[COLUMN_QUEUE]
+      full_queue = self.build + row[COLUMN_QUEUE]
 
       # check if valid length
       if not ((len(full_queue) in VALID_4L_PCSIZE) or (self.twoline and len(full_queue) in VALID_2L_PCSIZE)):
-        raise RuntimeError(f"Full queue could not produce a {'2' if self.twoline else '4'}l PC. Likely build queue {self.build_queue} is too short")
+        raise RuntimeError(f"Full queue could not produce a {'2' if self.twoline else '4'}l PC. Likely build {self.build} is too short and thus inaccurate")
 
       # get the rest of the pieces in the last bag
-      unused_last_bag = set(BAG) - set(full_queue[self.leading_size:])
-
+      unseen_last_bag_part = self.unused_last_bag - set(full_queue[self.leading_size:])
+      
       queue_value = sum(map(ord, row[COLUMN_QUEUE]))
       for unused_piece in row[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR):
-        save = ''.join(unused_last_bag) + unused_piece
+        save = ''.join(unseen_last_bag_part) + unused_piece
         save = sort_queue(save)
         saves.append(save)
 
@@ -99,7 +113,7 @@ class SavesReader:
       yield save_row
 
 if __name__ == '__main__':
-  reader = SavesReader('../output/path.csv', 'OILJO', 3, True)
+  reader = SavesReader('../output/path.csv', 'OILJO', 'O', 3, True)
 
   for val in reader.read(assign_fumens=False):
     print(val)

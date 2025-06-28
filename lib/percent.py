@@ -49,7 +49,8 @@ def percent(
   filepath: str, 
   wanted_saves: list[str],
   labels: list[str],
-  build_queue: str, 
+  build: str, 
+  leftover: str,
   pc_num: int, 
   log_file: TextIO,
   twoline: bool = False,
@@ -69,7 +70,7 @@ def percent(
   for wanted_save in wanted_saves:
     asts.append(wanted_saves_parser.parse(wanted_save))
 
-  save_reader = SavesReader(filepath, build_queue, pc_num, twoline)
+  save_reader = SavesReader(filepath, build, leftover, pc_num, twoline)
 
   for row in save_reader.read():
     # ignore rows that aren't solveable if out of solves
