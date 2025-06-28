@@ -2,6 +2,7 @@ from typing import TextIO
 import csv
 from .saves_reader import SavesReader, COLUMN_QUEUE, COLUMN_FUMEN_COUNT, COLUMN_USED_PIECES, COLUMN_UNUSED_PIECES, COLUMN_FUMENS, COLUMN_UNUSED_PIECES_DELIMITOR, COLUMN_FUMENS_DELIMITOR
 from .parser import Parser as WantedSavesParser, evaluate_ast_all
+from .utils import fumen_combine
 
 PATH_COLUMNS = [COLUMN_QUEUE, COLUMN_FUMEN_COUNT, COLUMN_USED_PIECES, COLUMN_UNUSED_PIECES, COLUMN_FUMENS]
 
@@ -19,6 +20,8 @@ def filter(
   tinyurl: bool = True,
   fumen_code: bool = False
 ):
+  unique_fumens = set()
+
   wanted_saves_parser = WantedSavesParser() 
   asts = []
   for wanted_save in wanted_saves:
@@ -26,9 +29,12 @@ def filter(
 
   save_reader = SavesReader(filepath, build_queue, pc_num, twoline)
 
-  outfile = open(output_path, 'w')
-  filtered_path = csv.DictWriter(outfile, PATH_COLUMNS)
-  filtered_path.writeheader()
+  outfile = None
+  filtered_path = None
+  if output_type != "unique":
+    outfile = open(output_path, 'w')
+    filtered_path = csv.DictWriter(outfile, PATH_COLUMNS)
+    filtered_path.writeheader()
 
   for row in save_reader.read(assign_fumens=True, assign_line=True):
     # ignore rows that aren't solveable
@@ -51,6 +57,10 @@ def filter(
     new_fumens = []
     for i in indicies:
       new_fumens += row.fumens[i]
+    if output_type == "unique":
+      unique_fumens |= set(new_fumens)
+      continue
+
     row.line[COLUMN_FUMENS] = COLUMN_FUMENS_DELIMITOR.join(new_fumens)
     
     unused_pieces = row.line[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR)
@@ -59,6 +69,15 @@ def filter(
     row.line[COLUMN_FUMEN_COUNT] = str(len(new_fumens))
     row.line[COLUMN_USED_PIECES] = '' # empty as not useful
     
-    filtered_path.writerow(row.line)
+    if filtered_path is not None:
+      filtered_path.writerow(row.line)
 
-  outfile.close()
+  if outfile is not None:
+    outfile.close()
+
+  if output_type == "unique":
+    # combine all the fumens together
+    unique_solves = fumen_combine(list(unique_fumens))
+    log_file.write(unique_solves)
+    if console_print:
+      print(unique_solves)
