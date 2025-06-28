@@ -1,10 +1,13 @@
-from typing import TextIO
 import csv
+import re
+import subprocess
+from typing import TextIO
 from .saves_reader import SavesReader, COLUMN_QUEUE, COLUMN_FUMEN_COUNT, COLUMN_USED_PIECES, COLUMN_UNUSED_PIECES, COLUMN_FUMENS, COLUMN_UNUSED_PIECES_DELIMITOR, COLUMN_FUMENS_DELIMITOR
 from .parser import Parser as WantedSavesParser, evaluate_ast_all
-from .utils import fumen_combine
+from .utils import fumen_combine, fumen_combine_comments, make_fumen_url, make_tiny
 
 PATH_COLUMNS = [COLUMN_QUEUE, COLUMN_FUMEN_COUNT, COLUMN_USED_PIECES, COLUMN_UNUSED_PIECES, COLUMN_FUMENS]
+STRICT_MINIMAL_FILENAME = "path_minimal_strict.md"
 
 def filter(
   filepath: str, 
@@ -18,7 +21,6 @@ def filter(
   cumulative_percent: bool = False,
   output_type: str = "minimal",
   tinyurl: bool = True,
-  fumen_code: bool = False
 ):
   unique_fumens = set()
 
@@ -81,3 +83,47 @@ def filter(
     log_file.write(unique_solves)
     if console_print:
       print(unique_solves)
+  elif output_type == "minimal":
+    generate_minimals(output_path, log_file, console_print, tinyurl)
+
+def read_strict_minimals(filepath: str) -> str:
+  with open(filepath, "r") as infile:
+    lines = infile.readlines()
+
+  re_success = re.match(r'Success rate: \d{2,3}\.\d{2}% \(\d+ / (\d+)\)', lines[2])
+  if re_success is None:
+    raise RuntimeError("Expected success rate in strict minimals file but not found")
+
+  total = int(re_success.group(1))
+  percents = []
+  for line in lines[13::9]:
+    re_cover = re.match(r"(\d+)", line)
+    if re_cover is None:
+      raise RuntimeError("Expected number of cover in strict minimals file but not found")
+
+    cover_count = int(re_cover.group(1))
+
+    percent = cover_count / total * 100
+    percent = f'{percent:.2f}% ({cover_count}/{total})'
+    percents.append(percent)
+
+  fumens = re.findall("(v115@[a-zA-Z0-9?/+]*)", lines[6])
+  return fumen_combine_comments(fumens, percents)
+
+def generate_minimals(filtered_path: str, log_file: TextIO, console_print: bool, tinyurl: bool):
+  result = subprocess.run(['sfinder-minimal', filtered_path], capture_output=True, text=True)
+  log_file.write(result.stdout)
+
+  fumen = read_strict_minimals(STRICT_MINIMAL_FILENAME)
+
+  line = fumen
+  if tinyurl:
+    try:
+      line = make_tiny(make_fumen_url(fumen))
+    except:
+      line = "Tinyurl did not accept fumen due to url length"
+
+  log_file.write(f"True minimal:\n{line}\n")
+  if console_print:
+    print(f"True minimal:\n{line}")
+  

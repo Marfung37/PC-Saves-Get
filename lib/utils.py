@@ -48,6 +48,27 @@ def fumen_combine(fumens: list[str]):
 
   return pf.encode(pages)
 
+def fumen_combine_comments(fumens: list[str], comments: list[str]):
+  '''
+  Set the comments of the pages of combined fumen of only first pages
+
+  Parameter:
+      fumens (list[str]): list of fumens to combine
+      comments (list[str]): list of comments to set
+
+  Return:
+      str: fumen with the changes
+  '''
+
+  pages = []
+
+  for fumen in fumens:
+    pages.append(_decode_wrapper(fumen)[0])
+  for page, comment in zip(pages, comments):
+    page.comment = comment
+
+  return pf.encode(pages)
+
 def fumen_get_comments(fumen: str):
   '''
   Get the comments of the pages of a fumen
@@ -100,3 +121,18 @@ def all_index(seq: Iterable[bool]) -> list[int]:
   Returns all truthy indicies
   '''
   return [i for i, val in enumerate(seq) if val]
+
+def make_fumen_url(fumen: str):
+  return f"https://fumen.zui.jp/?{fumen}"
+
+def make_tiny(url: str):
+  '''
+  Query tinyurl to generate a tinyurl
+  '''
+  import contextlib
+  from urllib.parse import urlencode
+  from urllib.request import urlopen
+
+  request_url = ('http://tinyurl.com/api-create.php?' + urlencode({'url':url}))
+  with contextlib.closing(urlopen(request_url)) as response:
+    return response.read().decode('utf-8')

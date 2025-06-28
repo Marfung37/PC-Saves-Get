@@ -94,9 +94,9 @@ def parse_filter_args(args):
   wanted_saves, _ = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
   if args.best_save:
-    filter(args.path_file, args.filtered_path, wanted_saves, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl, args.fumen_code)
+    filter(args.path_file, args.filtered_path, wanted_saves, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
   else:
-    filter(args.path_file, args.filtered_path, [wanted_saves[0]], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl, args.fumen_code)
+    filter(args.path_file, args.filtered_path, [wanted_saves[0]], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
 
   log_file.close()
 
@@ -137,6 +137,4 @@ filter_parser.add_argument("-fp", "--filtered-path", help="output file directory
 filter_parser.add_argument("-pr", "--console-print", help="log to terminal (default: True)", action="store_false")
 filter_parser.add_argument("-s", "--solve", help="setting for how to output solve (minimal, unique, none)(default: minimal)", choices={"minimal", "unique", "none"}, metavar="<string>", default="minimal", type=str)
 filter_parser.add_argument("-t", "--tinyurl", help="output the link with tinyurl if possible (default: True)", action="store_false")
-filter_parser.add_argument("-fc", "--fumen-code", help="include the fumen code in the output (default: False)", action="store_true")
-
 
