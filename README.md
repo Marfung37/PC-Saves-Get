@@ -2,7 +2,7 @@
 Extension of calculating saves based on knewjade's sfinder
 
 # Dependencies
-```npm install tetris-fumen``` - [fumen api](https://github.com/knewjade/tetris-fumen)  
+```pip install py_fumen_py``` - [fumen api](https://github.com/OctupusTea/py-fumen-py/tree/main)  
 ```npm install -g sfinder-strict-minimal``` - [sfinder-strict-minimal](https://github.com/eight04/sfinder-strict-minimal)  
 
 # Wanted Saves Format
