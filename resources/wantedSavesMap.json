@@ -1,9 +1,0 @@
-
-{
-    "7th T Replace": ["TT#T>X", "TTILJSZ#T>O", "/TTILJ[SZ]O/#T>S/Z", "TTLJSZO#T>I", "/TTI[LJ]SZO/#T>L/J"],
-    "7th TLJ Replace": ["TT||/TI[LJ]{3}S?Z?O?/#T>X or L/J>[ISZO]", "TT#T>X", "TTILJSZ#T>O", "/TTILJ[SZ]O/#T>S/Z", "TTLJSZO#T>I", "/TTI[LJ]SZO/#T>L/J", "/TI?[LJ]{3}S?Z?O?/#L/J>[ISZO]", "/T[LJ]{3}/#L/J>I", "/TI[LJ]{3}[SZ]O/#L/J>S/Z", "/TI[LJ]{3}SZ/#L/J>O"],
-    "7th Saves": ["TT||/TI[LJ]{3}S?Z?O?/||/TIILJS?Z?O?/#T>X or [LJ]>[SZO] or I>[SZO]", "TTILJSZ#T>O", "/TTILJ[SZ]O/#T>[SZ]", "TTLJSZO#T>I", "TILLJSO||TILJJZO#L>Z or J>S", "TILLJZO||TILJJSO#L>S or J>Z", "/TI[LJ]{3}SZ/#[LJ]>O", "TIILJSZ#I>O", "/TTI[LJ]SZO/#T>[LJ]", "/TIILJ[SZ]O/#I>[SZ]"],
-    "2nd Saves": ["T||O#T or O", "T", "O"],
-    "1st Saves": ["/T[^T]/||/^[^LJ]*[LJ]{2}[^LJ]*$/||/^[^LJ]+$/#one T or even L/J", "/T[^T]/#one T", "/^[^LJ]*[LJ]{2}[^LJ]*$/||/^[^LJ]+$/#even L/J"],
-    "1st Avoid Bad": ["^/^[^TLJ]*[LJ][^LJ]*$/#avoid no T one L/J"]
-}

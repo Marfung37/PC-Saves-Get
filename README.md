@@ -2,7 +2,6 @@
 Extension of calculating saves based on knewjade's sfinder
 
 # Dependencies
-```pip install argparse``` - parser for command line  
 ```npm install tetris-fumen``` - [fumen api](https://github.com/knewjade/tetris-fumen)  
 ```npm install -g sfinder-strict-minimal``` - [sfinder-strict-minimal](https://github.com/eight04/sfinder-strict-minimal)  
 
@@ -38,48 +37,50 @@ Extension of calculating saves based on knewjade's sfinder
 Gives the save percentage
 #### Options
 ``--wanted-save`` or ``-w`` - the save expression  
-``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
+``--key`` or ``-k`` - use saves.json for preset wanted saves  
 ``--all`` or ``-a`` - output all of the saves and corresponding percents  
 
   * Note: At least one of ``-w``, ``-k``, or ``-a`` is required to run percent  
-  * Note: If ``-w``, ``-k``, or ``-a`` are included, they will be concatanated together </ul>
+  * Note: If ``-w`` or ``-k``, they will be concatanated together while with ``-a`` will only output all saves
 
-``--pieces`` or ``-p`` - pieces used on the setup  
-``--pc-num`` or ``-pc`` - pc num for setup & solve  
+`--build` or `-b` - pieces in the build of the setup  
+`--leftover` or `-l` - pieces in the leftover for this pc. This is inital pieces of PC that are part of a bag.  
+`--pc-num` or `-pc` - pc number for the setup  
 
-  * Note: At least one of ``-p`` or ``-pc`` is required for percent  
-  * Note: If both ``-p`` and ``-pc`` is included, ``-p`` would take precedence </ul>
+  * Note: All `-b`, `-l`, and `-pc` are required to run  
 
+`--two-line` or `-tl` - setup is two lines (default: false)  
 ``--best-save`` or ``-bs`` - enable best save where first wantedSave is priority and second and so on  
-``--tree-depth`` or ``-td`` - set the tree depth of pieces in percent (default: 0)
-``--path``  or ``-f`` - path file directory (default: output/path.csv)  
-``--output`` or ``-o`` - output file directory (default: output/saves.txt)  
-``--print`` or ``-pr`` - print out the output into the terminal (default: true)  
-``--fraction`` or ``-fr`` - include the fraction along with the percent (default: true)  
+``--tree-depth`` or ``-td`` - set the tree depth of pieces in percent (default: 0)  
+``--path-file``  or ``-f`` - path filepath (default: output/path.csv)  
+``--log-path`` or ``-lp`` - output filepath (default: output/last_output.txt)  
+``--saves-path`` or ``-sp`` - path to json file with preset wanted saves (default: GITROOT/saves.json)  
+``--console-print`` or ``-pr`` - log to terminal (default: true)  
 ``--fails`` or ``-fa`` - include the fail queues for saves in output (default: false)  
-``--over-solves`` or ``-os`` - have the percents be saves/solves (default: false)  
+``--over-solves`` or ``-os`` - have the percents be out of when setup is solvable (default: false)  
 ___
 ## filter
 Filter path.csv for only solves that meet the wanted saves and outputs the solves
 ### Options
 ``--wanted-save`` or ``-w`` - the save expression  
 ``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
-``--index`` or ``-i`` - index or index ranges in ``-w`` or ``-k``
+``--index`` or ``-i`` - index of -k or -w to pick which expression to filter by (default=0)  
 
   * Note: One of ``-w`` or ``-k`` is required to run filter  
-  * Note: It will always choose the first element to filter by in the wanted saves be it from ``-k`` or ``-w`` </ul>
 
-``--pieces`` or ``-p`` - pieces used on the setup  
-``--pc-num`` or ``-pc`` - pc num for setup & solve  
+`--build` or `-b` - pieces in the build of the setup  
+`--leftover` or `-l` - pieces in the leftover for this pc. This is inital pieces of PC that are part of a bag.  
+`--pc-num` or `-pc` - pc number for the setup  
 
-  * Note: At least one of ``-p`` or ``-pc`` is required for percent  
-  * Note: If both ``-p`` and ``-pc`` is included, ``-p`` would take precedence </ul>
+  * Note: All `-b`, `-l`, and `-pc` are required to run  
 
+`--two-line` or `-tl` - setup is two lines (default: false)  
 ``--best-save`` or ``-bs`` - enable best save where first wantedSave is priority and second and so on  
 ``--cumulative`` or ``-c`` - gives percents cumulatively in fumens only in a minimal set (default: False)  
-``--path``  or ``-f`` - path file directory (default: output/path.csv)  
-``--output`` or ``-o`` - output file directory (default: output/saves.txt)  
-``--print`` or ``-pr`` - print out the output into the terminal (default: true)  
-``--solve`` or ``-s`` - setting for how to output solve (minimal, unique, None)(default: minimal)  
-``--tinyurl`` or ``-t`` - output the link with tinyurl if possible (default: True)  
-``--fumen-code`` or ``-fc`` - include the fumen code in the output (default: False)  
+``--path-file``  or ``-f`` - path filepath (default: output/path.csv)  
+``--log-path`` or ``-lp`` - output filepath (default: output/last_output.txt)  
+``--saves-path`` or ``-sp`` - path to json file with preset wanted saves (default: GITROOT/saves.json)  
+``--filtered-path`` or ``-fp`` - path to json file with preset wanted saves (default: GITROOT/saves.json)  
+``--console-print`` or ``-pr`` - print out the output into the terminal (default: true)  
+``--solve`` or ``-s`` - setting for how to output solve (minimal, unique, None) (default: minimal)  
+``--tinyurl`` or ``-t`` - output the link with tinyurl if possible. If false, outputs fumen code (default: true)  
