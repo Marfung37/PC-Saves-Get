@@ -48,6 +48,8 @@ class SavesReader:
     del self._file
 
   def read(self, assign_fumens: bool = False, assign_line: bool = False):
+    fumen_labels = {}
+
     for row in self.reader:
       saves = []
       save_fumens = []
@@ -69,6 +71,7 @@ class SavesReader:
       # get the rest of the pieces in the last bag
       unused_last_bag = set(BAG) - set(full_queue[self.leading_size:])
 
+      queue_value = sum(map(ord, row[COLUMN_QUEUE]))
       for unused_piece in row[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR):
         save = ''.join(unused_last_bag) + unused_piece
         save = sort_queue(save)
@@ -78,9 +81,14 @@ class SavesReader:
           curr_save_fumens = []
           # find the fumen that didn't use this piece
           for fumen in row[COLUMN_FUMENS].split(COLUMN_FUMENS_DELIMITOR):
-            # the comment contains what pieces used in the solve
-            comment = fumen_get_comments(fumen)[0]
-            fumen_unused_piece = next((Counter(row[COLUMN_QUEUE]) - Counter(comment)).elements())
+            if fumen not in fumen_labels:
+              # the comment contains what pieces used in the solve
+              # get the sum of the values of the characters store in dict for fast lookup
+              fumen_labels[fumen] = sum(map(ord, fumen_get_comments(fumen)[0]))
+            comment = fumen_labels[fumen]
+
+            # since only one piece difference, queue - comment gives the ascii value of the piece
+            fumen_unused_piece = chr(queue_value - comment)
             if unused_piece == fumen_unused_piece:
               curr_save_fumens.append(fumen)
           save_fumens.append(curr_save_fumens)

@@ -37,6 +37,7 @@ def filter(
 
     # get first index that satisfies the save
     indicies = []
+
     for ast in asts:
       indicies = evaluate_ast_all(ast, row.saves)
       if len(indicies) > 0:
@@ -46,18 +47,18 @@ def filter(
       raise RuntimeError("Expected fumens to be populated from save reader")
     if row.line is None:
       raise RuntimeError("Expected line to be populated from save reader")
-
+    
     new_fumens = []
     for i in indicies:
       new_fumens += row.fumens[i]
     row.line[COLUMN_FUMENS] = COLUMN_FUMENS_DELIMITOR.join(new_fumens)
-
+    
     unused_pieces = row.line[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR)
     row.line[COLUMN_UNUSED_PIECES] = COLUMN_UNUSED_PIECES_DELIMITOR.join([unused_pieces[i] for i in indicies])
-
+    
     row.line[COLUMN_FUMEN_COUNT] = str(len(new_fumens))
     row.line[COLUMN_USED_PIECES] = '' # empty as not useful
-
+    
     filtered_path.writerow(row.line)
 
   outfile.close()
