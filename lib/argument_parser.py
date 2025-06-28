@@ -104,10 +104,14 @@ def parse_filter_args(args):
 
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
+
   if args.best_save:
     filter(args.path_file, args.filtered_path, wanted_saves, labels, args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
   else:
-    filter(args.path_file, args.filtered_path, [wanted_saves[0]], [labels[0]], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
+    if args.index < -len(wanted_saves) or args.index >= len(wanted_saves):
+      print(f"Index out of bounds for wanted saves")
+
+    filter(args.path_file, args.filtered_path, [wanted_saves[args.index]], [labels[args.index]], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
 
   log_file.close()
 
@@ -137,7 +141,7 @@ filter_parser.set_defaults(func=parse_filter_args)
 filter_parser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
 filter_parser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
 filter_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (default: False)", action="store_true")
-# filter_parser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default='')", default=None, metavar="<string>", nargs='*')
+filter_parser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default=0)", metavar="<int>", type=int, default=0)
 filter_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
 filter_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
 filter_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)
