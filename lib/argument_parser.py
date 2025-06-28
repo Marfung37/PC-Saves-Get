@@ -91,12 +91,12 @@ def parse_filter_args(args):
 
   log_file = open(args.log_path, 'w')
 
-  wanted_saves, _ = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
+  wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
   if args.best_save:
-    filter(args.path_file, args.filtered_path, wanted_saves, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
+    filter(args.path_file, args.filtered_path, wanted_saves, labels, args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
   else:
-    filter(args.path_file, args.filtered_path, [wanted_saves[0]], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
+    filter(args.path_file, args.filtered_path, [wanted_saves[0]], [labels[0]], args.build_queue, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
 
   log_file.close()
 

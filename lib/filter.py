@@ -13,6 +13,7 @@ def filter(
   filepath: str, 
   output_path: str,
   wanted_saves: list[str],
+  labels: list[str],
   build_queue: str, 
   pc_num: int, 
   log_file: TextIO,
@@ -84,7 +85,7 @@ def filter(
     if console_print:
       print(unique_solves)
   elif output_type == "minimal":
-    generate_minimals(output_path, log_file, console_print, tinyurl)
+    generate_minimals(labels, output_path, log_file, console_print, tinyurl)
 
 def read_strict_minimals(filepath: str) -> str:
   with open(filepath, "r") as infile:
@@ -110,7 +111,7 @@ def read_strict_minimals(filepath: str) -> str:
   fumens = re.findall("(v115@[a-zA-Z0-9?/+]*)", lines[6])
   return fumen_combine_comments(fumens, percents)
 
-def generate_minimals(filtered_path: str, log_file: TextIO, console_print: bool, tinyurl: bool):
+def generate_minimals(labels: list[str], filtered_path: str, log_file: TextIO, console_print: bool, tinyurl: bool):
   result = subprocess.run(['sfinder-minimal', filtered_path], capture_output=True, text=True)
   log_file.write(result.stdout)
 
@@ -123,7 +124,9 @@ def generate_minimals(filtered_path: str, log_file: TextIO, console_print: bool,
     except:
       line = "Tinyurl did not accept fumen due to url length"
 
-  log_file.write(f"True minimal:\n{line}\n")
+  line = f"True minimal for {','.join(labels)}:\n{line}"
+
+  log_file.write(line + '\n')
   if console_print:
-    print(f"True minimal:\n{line}")
+    print(line)
   
