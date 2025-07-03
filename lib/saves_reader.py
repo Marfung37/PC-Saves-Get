@@ -85,6 +85,7 @@ class SavesReader:
       unseen_last_bag_part = self.unused_last_bag - set(full_queue[self.leading_size:])
       
       queue_value = sum(map(ord, row[COLUMN_QUEUE]))
+         
       for unused_piece in row[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR):
         save = ''.join(unseen_last_bag_part) + unused_piece
         save = sort_queue(save)
@@ -101,7 +102,7 @@ class SavesReader:
             comment = fumen_labels[fumen]
 
             # since only one piece difference, queue - comment gives the ascii value of the piece
-            fumen_unused_piece = chr(queue_value - comment)
+            fumen_unused_piece = chr(queue_value - comment) if queue_value - comment > 0 else ''
             if unused_piece == fumen_unused_piece:
               curr_save_fumens.append(fumen)
           save_fumens.append(curr_save_fumens)

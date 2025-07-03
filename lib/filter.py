@@ -43,6 +43,7 @@ def filter(
 
   for row in save_reader.read(assign_fumens=True, assign_line=True):
     # ignore rows that aren't solveable
+    # TODO: this give incorrect filtered path
     if not row.solveable:
       continue
 
@@ -107,27 +108,25 @@ def read_strict_minimals(filepath: str, cumulative_percent: bool = False) -> str
     cover_queues = []
     # get sets of the queues the solves cover
     for line in lines[16::9]:
-      cover_queues.append(set(line.split(STRICT_MINIMAL_QUEUE_DELIMITOR)))
+      cover_queues.append(set(line.strip().split(STRICT_MINIMAL_QUEUE_DELIMITOR)))
 
     # greedy find the solve with most coverage
     # first one, always first fumen has equally most coverage
-    indicies = [0]
-    queue_set |= cover_queues[0]
-    percent = len(cover_queues[0]) / total * 100
-    percent = f'{percent:.2f}% ({len(cover_queues[0])}/{total})'
-    percents.append(percent)
+    indicies = []
+    queue_set = set()
 
     # get the solve with largest remaining cover
-    for _ in range(len(cover_queues) - 1):
+    for _ in range(len(cover_queues)):
       largest_size = 0
       largest_index = -1
       for i in range(len(cover_queues)):
         if i in indicies:
           continue
-        new_set = queue_set - cover_queues[i]
-        if len(new_set) > largest_size:
-          largest_size = len(new_set)
+        size = len(cover_queues[i] - queue_set)
+        if size > largest_size:
+          largest_size = size
           largest_index = i
+
       queue_set |= cover_queues[largest_index]
       cover_count = len(queue_set)
       percent = cover_count / total * 100
@@ -151,8 +150,7 @@ def read_strict_minimals(filepath: str, cumulative_percent: bool = False) -> str
   return fumen_combine_comments(fumens, percents)
 
 def generate_minimals(labels: list[str], filtered_path: str, log_file: TextIO, console_print: bool, tinyurl: bool, cumulative_percent: bool):
-  result = subprocess.run(['sfinder-minimal', filtered_path], capture_output=True, text=True)
-  log_file.write(result.stdout)
+  subprocess.run(['sfinder-minimal', filtered_path])
 
   fumen = read_strict_minimals(STRICT_MINIMAL_FILENAME, cumulative_percent)
 
