@@ -43,17 +43,14 @@ def filter(
 
   for row in save_reader.read(assign_fumens=True, assign_line=True):
     # ignore rows that aren't solveable
-    # TODO: this give incorrect filtered path
-    if not row.solveable:
-      continue
-
     # get first index that satisfies the save
     indicies = []
 
-    for ast in asts:
-      indicies = evaluate_ast_all(ast, row.saves)
-      if len(indicies) > 0:
-        break
+    if row.solveable:
+      for ast in asts:
+        indicies = evaluate_ast_all(ast, row.saves)
+        if len(indicies) > 0:
+          break
 
     if row.fumens is None:
       raise RuntimeError("Expected fumens to be populated from save reader")
@@ -95,7 +92,7 @@ def read_strict_minimals(filepath: str, cumulative_percent: bool = False) -> str
   with open(filepath, "r") as infile:
     lines = infile.readlines()
 
-  re_success = re.match(r'Success rate: \d{2,3}\.\d{2}% \(\d+ / (\d+)\)', lines[2])
+  re_success = re.match(r'Success rate: \d+\.\d{2}% \(\d+ / (\d+)\)', lines[2])
   if re_success is None:
     raise RuntimeError("Expected success rate in strict minimals file but not found")
 

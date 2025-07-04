@@ -87,7 +87,10 @@ def percent(
       total += 1
     else:
       # get first index that satisfies the save
-      index = any_index(map(lambda ast: evaluate_ast(ast, row.saves), asts))
+      if len(row.saves) == 0:
+        index = None
+      else:
+        index = any_index(map(lambda ast: evaluate_ast(ast, row.saves), asts))
 
       if index is not None:
         for node in _get_nodes(row.queue, saveable_counters[index], tree_depth):
