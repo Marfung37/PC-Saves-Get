@@ -212,7 +212,7 @@ def evaluate_ast_all(node, saves: list[str]) -> list[int]:
       raise ValueError(f"Invalid regex: '{node.value}' - {e}")
   elif isinstance(node, UnaryOp):
     if node.op == 'NOT':
-      return list(set(range(len(saves))) - set(evaluate_ast_all(node.expr, saves)))
+      return [] if len(evaluate_ast_all(node.expr, saves)) > 0 else list(range(len(saves)))
     elif node.op == 'AVOID':
       # if there is at least one that is not the expression
       return all_index(map(lambda save: not evaluate_ast_all(node.expr, [save]), saves))
