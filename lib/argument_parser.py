@@ -107,12 +107,12 @@ def parse_filter_args(args):
 
 
   if args.best_save:
-    filter(args.path_file, args.filtered_path, wanted_saves, labels, args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
+    filter(args.path_file, wanted_saves, labels, args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
   else:
     if args.index < -len(wanted_saves) or args.index >= len(wanted_saves):
       print(f"Index out of bounds for wanted saves")
 
-    filter(args.path_file, args.filtered_path, [wanted_saves[args.index]], [labels[args.index]], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.tinyurl)
+    filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
 
   log_file.close()
 
@@ -151,8 +151,8 @@ filter_parser.add_argument("-c", "--cumulative", help="gives percents cumulative
 filter_parser.add_argument("-f", "--path-file", help="path filepath (default: output/path.csv)", metavar="<filepath>", default=DEFAULT_PATH_FILE, type=str)
 filter_parser.add_argument("-lp", "--log-path", help="output filepath (default: output/last_output.txt)", metavar="<filepath>", default=DEFAULT_LAST_OUTPUT_FILE, type=str)
 filter_parser.add_argument("-sp", "--saves-path", help="path to json file with preset wanted saves (default: GITROOT/saves.json)", metavar="<filepath>", default=DEFAULT_SAVES_JSON, type=str)
-filter_parser.add_argument("-fp", "--filtered-path", help="output filtered path file (default: output/filtered_path.txt)", metavar="<filepath>", default=DEFAULT_FILTERED_PATH_FILE, type=str)
+filter_parser.add_argument("-fp", "--filtered-path", help="output filtered path file with solve of \"file\" (default: output/filtered_path.txt)", metavar="<filepath>", default=DEFAULT_FILTERED_PATH_FILE, type=str)
 filter_parser.add_argument("-pr", "--console-print", help="log to terminal (default: True)", action="store_false")
-filter_parser.add_argument("-s", "--solve", help="setting for how to output solve (minimal, unique, none) (default: minimal)", choices={"minimal", "unique", "none"}, metavar="<string>", default="minimal", type=str)
+filter_parser.add_argument("-s", "--solve", help="setting for how to output solve (minimal, unique, file) (default: minimal)", choices={"minimal", "unique", "file"}, metavar="<string>", default="minimal", type=str)
 filter_parser.add_argument("-t", "--tinyurl", help="output the link with tinyurl if possible (default: True)", action="store_false")
 

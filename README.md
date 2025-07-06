@@ -3,7 +3,6 @@ Extension of calculating saves based on knewjade's sfinder
 
 # Dependencies
 ```pip install py_fumen_py``` - [fumen api](https://github.com/OctupusTea/py-fumen-py/tree/main)  
-```npm install -g sfinder-strict-minimal``` - [sfinder-strict-minimal](https://github.com/eight04/sfinder-strict-minimal)  
 
 # Wanted Saves Format
 * ``I, LS, LSZ`` - does each wanted saves separately

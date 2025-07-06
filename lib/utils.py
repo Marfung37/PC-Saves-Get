@@ -13,6 +13,21 @@ PIECEVALS = {
   'O': 7,
 }
 
+class PIECECOLORS:
+  BLACK = '\033[30;40m'
+  GRAY = '\033[90;100m'
+  MAGENTA = '\033[35;45m'
+  CYAN = '\033[96;106m'
+  ORANGE = '\033[38;5;208;48;5;208m'
+  BLUE = '\033[34;44m'
+  GREEN = '\033[92;102m'
+  RED = '\033[91;101m'
+  YELLOW = '\033[93;103m'
+  ENDC = '\033[0m'
+
+SQUARECHAR = '\u51f8'
+SQUARECHARWIDTH = 2
+
 def _decode_wrapper(fumen: str) -> list[pf.Page]:
   '''
   Decode the fumen with error handling
@@ -136,3 +151,37 @@ def make_tiny(url: str):
   request_url = ('http://tinyurl.com/api-create.php?' + urlencode({'url':url}))
   with contextlib.closing(urlopen(request_url)) as response:
     return response.read().decode('utf-8')
+
+def display_fumen(fumen: str, height: int = 4) -> list[list[str]]:
+  '''
+  Generate string when printed represents the field of the page in 2d list of each page the each line
+  '''
+  pages = _decode_wrapper(fumen)
+  field_displays = []
+
+  for page in pages:
+    if page.field is None: continue
+    if height < page.field.height():
+      height = page.field.height()
+
+  for page in pages:
+    if page.field is None: continue
+
+    part = page.field.string(truncated=False, with_garbage=False)
+
+    # truncate to the specified height
+    part = (PIECECOLORS.ENDC + '\n').join(part.split("\n")[-height:])
+    part = part.replace('_', PIECECOLORS.BLACK      + SQUARECHAR)        
+    part = part.replace('X', PIECECOLORS.GRAY       + SQUARECHAR)        
+    part = part.replace('T', PIECECOLORS.MAGENTA    + SQUARECHAR)        
+    part = part.replace('I', PIECECOLORS.CYAN       + SQUARECHAR)        
+    part = part.replace('L', PIECECOLORS.ORANGE     + SQUARECHAR)        
+    part = part.replace('J', PIECECOLORS.BLUE       + SQUARECHAR)        
+    part = part.replace('S', PIECECOLORS.GREEN      + SQUARECHAR)        
+    part = part.replace('Z', PIECECOLORS.RED        + SQUARECHAR)        
+    part = part.replace('O', PIECECOLORS.YELLOW     + SQUARECHAR)        
+    part += PIECECOLORS.ENDC
+
+    field_displays.append(part.split('\n'))
+
+  return field_displays
