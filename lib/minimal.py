@@ -72,7 +72,8 @@ def fumens_to_graph(fumens: list[list[str]]):
     for sibling_edge in set_first(edge.nodes).edges:
       if sibling_edge is edge: continue
 
-      sibling_edge.redundant = edge.nodes.issubset(sibling_edge.nodes)
+      if edge.nodes.issubset(sibling_edge.nodes):
+        sibling_edge.redundant = True
 
   clean_edges = list(filter(lambda e: not e.redundant, edges))
   nodes = fumen_store.get_nodes()
