@@ -178,10 +178,8 @@ def find_best_set(sets: list[list[Node]], log_file: TextIO | None = None) -> lis
       output += "Which is better? 1 or 2: " + result + '\n'
       log_file.write(output)
 
-    if result == '2':
-      sets.pop(1)
-    else:
-      sets.pop(0)
+    dropNodes = diffB if result == '2' else diffA;
+    sets = list(filter(lambda s: dropNodes.issubset(s), sets));
 
   return sets[0]
 

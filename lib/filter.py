@@ -171,6 +171,8 @@ def generate_minimals(
   print(f"{len(graph.edges)} edges, {len(graph.nodes)} nodes")
 
   minimal_sets = find_minimal_nodes(graph.edges)
+  print(f'You must learn {minimal_sets.count} solutions to cover all queues. There are {len(minimal_sets.sets)} combinations of solutions to cover all patterns.');
+  
   best_set = find_best_set(minimal_sets.sets, log_file)
   fumen_set = set(map(lambda n: n.key, best_set))
 
