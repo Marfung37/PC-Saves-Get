@@ -63,7 +63,7 @@ def fumen_combine(fumens: list[str]):
 
   return pf.encode(pages)
 
-def fumen_combine_comments(fumens: list[str], comments: list[str]):
+def fumen_combine_comments(fumens: list[str], comments: list[str], append: bool = False):
   '''
   Set the comments of the pages of combined fumen of only first pages
 
@@ -185,16 +185,3 @@ def display_fumen(fumen: str, height: int = 4) -> list[list[str]]:
     field_displays.append(part.split('\n'))
 
   return field_displays
-
-# DEBUG
-def clear_comments(fumens: list[str]) -> list[str]:
-  new_fumens = []
-  for fumen in fumens:
-    pages = _decode_wrapper(fumen)
-
-    for page in pages:
-      page.comment = ''
-
-    new_fumens.append(pf.encode(pages))
-
-  return new_fumens
