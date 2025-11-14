@@ -2,7 +2,6 @@ from os import path
 
 BAG = 'TILJSZO'
 
-PCSIZE = 10
 HOLD = 1
 
 DIRNAME = path.dirname(path.dirname(__file__))

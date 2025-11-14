@@ -2,12 +2,9 @@ import csv
 from collections import Counter
 from dataclasses import dataclass
 from typing import Optional
-from .formulas import PCNUM2LONUM, LONUM2BAGCOMP
+from .formulas import WIDTHHEIGHT2NUMPIECES, LONUM2BAGCOMP
 from .utils import fumen_get_comments, sort_queue
 from .constants import BAG, PCSIZE, HOLD
-
-VALID_4L_PCSIZE = {PCSIZE, PCSIZE + HOLD}
-VALID_2L_PCSIZE = {PCSIZE // 2, PCSIZE // 2 + HOLD}
 
 COLUMN_QUEUE = 'ツモ'
 COLUMN_FUMEN_COUNT = '対応地形数'
@@ -39,14 +36,12 @@ class SavesRow:
   line: Optional[dict[str, str]] = None
 
 class SavesReader:
-  def __init__(self, filepath: str, build: str, leftover: str, pc_num: int, twoline: bool = False):
+  def __init__(self, filepath: str, build: str, leftover: str, width: int, height: int):
     self.filepath = filepath
     self.build = build
     self.leftover = leftover
-    self.pc_num = pc_num
-    self.twoline = twoline
 
-    bag_comp = LONUM2BAGCOMP(PCNUM2LONUM(pc_num), 6 if twoline else 11)
+    bag_comp = LONUM2BAGCOMP(len(self.leftover), WIDTHHEIGHT2NUMPIECES(width, height))
     self.unused_last_bag = _get_unused_last_bag(build, leftover, bag_comp)
     self.leading_size = max(sum(bag_comp[:-1]), len(build))
 

@@ -4,7 +4,6 @@ from .constants import DEFAULT_SAVES_JSON, DEFAULT_PATH_FILE, DEFAULT_LAST_OUTPU
 from .percent import percent
 from .filter import filter
 from .utils import is_queue
-from .formulas import PCNUM2LONUM
 
 def parse_wanted_saves(raw_keys: list[str], raw_wanted_saves: list[str], saves_path: str) -> tuple[list[str], list[str]]:
   # get the wanted saves
@@ -57,9 +56,8 @@ def parse_percent_args(args):
     print("Build and Leftover expected to contain only TILJSZO pieces")
     exit(0)
 
-  # leftover isn't right length
-  if len(args.leftover) != PCNUM2LONUM(args.pc_num):
-    print(f"Leftover expected to contain {PCNUM2LONUM(args.pc_num)} pieces for pc {args.pc_num}")
+  if (args.width * args.height) % 4 != 0:
+    print("Width and height does not produce an area divisible by 4 necessary for a PC")
     exit(0)
 
   log_file = open(args.log_path, 'w')
@@ -96,15 +94,13 @@ def parse_filter_args(args):
     print("Build and Leftover expected to contain only TILJSZO pieces")
     exit(0)
 
-  # leftover isn't right length
-  if len(args.leftover) != PCNUM2LONUM(args.pc_num):
-    print(f"Leftover expected to contain {PCNUM2LONUM(args.pc_num)} pieces for pc {args.pc_num}")
-    exit(0)
-
   log_file = open(args.log_path, 'w')
 
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
-
+  
+  if (args.width * args.height) % 4 != 0:
+    print("Width and height does not produce an area divisible by 4 necessary for a PC")
+    exit(0)
 
   if args.best_save:
     filter(args.path_file, wanted_saves, labels, args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
@@ -127,8 +123,8 @@ percent_parser.add_argument("-a", "--all", help="output all of the saves and cor
 percent_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
 percent_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
 percent_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
-percent_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)
-percent_parser.add_argument("-tl", "--two-line", help="setup is two lines (default: False)", action="store_true")
+percent_parser.add_argument("-h", "--height", help="height of pc (default: 4)", metavar="<int>", type=int, default=0)
+percent_parser.add_argument("-wi", "--width", help="width of pc (default: 10)", metavar="<int>", type=int, default=0)
 percent_parser.add_argument("-td", "--tree-depth", help="set the tree depth of pieces in percent (default: 0)", metavar="<int>", type=int, default=0)
 percent_parser.add_argument("-f", "--path-file", help="path filepath (default: output/path.csv)", metavar="<filepath>", default=DEFAULT_PATH_FILE, type=str)
 percent_parser.add_argument("-lp", "--log-path", help="output filepath (default: output/last_output.txt)", metavar="<filepath>", default=DEFAULT_LAST_OUTPUT_FILE, type=str)
@@ -145,7 +141,8 @@ filter_parser.add_argument("-i", "--index", help="index of -k or -w to pick whic
 filter_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
 filter_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
 filter_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)
-filter_parser.add_argument("-tl", "--two-line", help="setup is two lines (default: False)", action="store_true")
+filter_parser.add_argument("-h", "--height", help="height of pc (default: 4)", metavar="<int>", type=int, default=0)
+filter_parser.add_argument("-wi", "--width", help="width of pc (default: 10)", metavar="<int>", type=int, default=0)
 filter_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (default: False)", action="store_true")
 filter_parser.add_argument("-c", "--cumulative", help="gives percents cumulatively in fumens of a minimal set (default: False)", action="store_true")
 filter_parser.add_argument("-f", "--path-file", help="path filepath (default: output/path.csv)", metavar="<filepath>", default=DEFAULT_PATH_FILE, type=str)

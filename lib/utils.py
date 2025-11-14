@@ -185,3 +185,16 @@ def display_fumen(fumen: str, height: int = 4) -> list[list[str]]:
     field_displays.append(part.split('\n'))
 
   return field_displays
+
+# DEBUG
+def clear_comments(fumens: list[str]) -> list[str]:
+  new_fumens = []
+  for fumen in fumens:
+    pages = _decode_wrapper(fumen)
+
+    for page in pages:
+      page.comment = ''
+
+    new_fumens.append(pf.encode(pages))
+
+  return new_fumens
