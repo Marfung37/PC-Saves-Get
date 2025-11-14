@@ -50,7 +50,7 @@ class SavesReader:
     self.unused_last_bag = _get_unused_last_bag(build, leftover, bag_comp)
     self.leading_size = max(sum(bag_comp[:-1]), len(build))
 
-    self._file = open(filepath, 'r')
+    self._file = open(filepath, 'r', encoding="utf-8-sig")
     self.reader = csv.DictReader(self._file)
     if not REQUIRED_COLUMNS.issubset(set(self.reader.fieldnames or [])):
       missing = REQUIRED_COLUMNS - set(self.reader.fieldnames or [])
