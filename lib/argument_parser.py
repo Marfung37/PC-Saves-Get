@@ -13,7 +13,7 @@ def parse_wanted_saves(raw_keys: list[str], raw_wanted_saves: list[str], saves_p
   labels = []
   
   if raw_keys:
-    with open(saves_path, 'r') as savesfile:
+    with open(saves_path, 'r', encoding="utf8") as savesfile:
       saves_map = json.loads(savesfile.read())
     for key in raw_keys:
       if key not in saves_map:
@@ -62,7 +62,7 @@ def parse_percent_args(args):
     print(f"Leftover expected to contain {PCNUM2LONUM(args.pc_num)} pieces for pc {args.pc_num}")
     exit(0)
 
-  log_file = open(args.log_path, 'w')
+  log_file = open(args.log_path, 'w', encoding="utf8")
   if args.all:
     percent(args.path_file, [], [], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, args.all)
     log_file.close()
@@ -101,7 +101,7 @@ def parse_filter_args(args):
     print(f"Leftover expected to contain {PCNUM2LONUM(args.pc_num)} pieces for pc {args.pc_num}")
     exit(0)
 
-  log_file = open(args.log_path, 'w')
+  log_file = open(args.log_path, 'w', encoding="utf8")
 
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
