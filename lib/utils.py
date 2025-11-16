@@ -80,7 +80,8 @@ def fumen_combine_comments(fumens: list[str], comments: list[str], append: bool 
   for fumen in fumens:
     pages.append(_decode_wrapper(fumen)[0])
   for page, comment in zip(pages, comments):
-    page.comment = comment
+    if append:
+      page.comment += comment
 
   return pf.encode(pages)
 

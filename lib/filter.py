@@ -156,7 +156,7 @@ def generate_minimals(
       queue_set |= cover_queues[largest_index]
       cover_count = len(queue_set)
       percent = cover_count / total * 100
-      percent = f'{percent:.2f}% ({cover_count}/{total})'
+      percent = f': {percent:.2f}% ({cover_count}/{total})'
       percents.append(percent)
       indicies.append(largest_index)
 
@@ -171,10 +171,10 @@ def generate_minimals(
       cover_count = len(queues)
 
       percent = cover_count / total * 100
-      percent = f'{percent:.2f}% ({cover_count}/{total})'
+      percent = f': {percent:.2f}% ({cover_count}/{total})'
       percents.append(percent)
 
-  minimal_fumen = fumen_combine_comments(fumens, percents)
+  minimal_fumen = fumen_combine_comments(fumens, percents, True)
   
   line = minimal_fumen
   if tinyurl:
