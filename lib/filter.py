@@ -6,8 +6,6 @@ from .utils import fumen_combine, fumen_combine_comments, make_fumen_url, make_t
 from .minimal import fumens_to_graph, find_minimal_nodes, find_best_set
 
 PATH_COLUMNS = [COLUMN_QUEUE, COLUMN_FUMEN_COUNT, COLUMN_USED_PIECES, COLUMN_UNUSED_PIECES, COLUMN_FUMENS]
-STRICT_MINIMAL_FILENAME = "path_minimal_strict.md"
-STRICT_MINIMAL_QUEUE_DELIMITOR = ","
 
 def filter(
   filepath: str, 

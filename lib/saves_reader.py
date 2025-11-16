@@ -17,10 +17,9 @@ COLUMN_FUMENS_DELIMITOR = ';'
 REQUIRED_COLUMNS = {COLUMN_QUEUE, COLUMN_UNUSED_PIECES, COLUMN_FUMENS}
 
 def _get_unused_last_bag(build: str, leftover: str, bag_comp: list[int]) -> set[str]:
-  if len(bag_comp) < 3:
-    last_bag_pieces_used = Counter(build) - Counter(leftover)
-  else:
-    last_bag_pieces_used = Counter(build) - Counter(leftover + BAG)
+  # assumes that not given an impossible build for the leftover and queues in path file
+  non_last_bags = leftover + BAG * (len(bag_comp) - 2)
+  last_bag_pieces_used = Counter(build) - Counter(non_last_bags)
 
   # the pieces used can at most have one of each piece
   unused_last_bag = Counter(BAG) - last_bag_pieces_used
