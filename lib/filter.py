@@ -15,9 +15,10 @@ def filter(
   labels: list[str],
   build: str, 
   leftover: str, 
-  pc_num: int, 
+  width: int,
+  height: int,
+  hold: int,
   log_file: TextIO,
-  twoline: bool = False,
   console_print: bool = True,
   cumulative_percent: bool = False,
   output_type: str = "minimal",
@@ -34,7 +35,7 @@ def filter(
   for wanted_save in wanted_saves:
     asts.append(wanted_saves_parser.parse(wanted_save))
 
-  save_reader = SavesReader(filepath, build, leftover, pc_num, twoline)
+  save_reader = SavesReader(filepath, build, leftover, width, height, hold)
 
   outfile = None
   filtered_path = None

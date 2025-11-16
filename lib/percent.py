@@ -51,9 +51,10 @@ def percent(
   labels: list[str],
   build: str, 
   leftover: str,
-  pc_num: int, 
+  width: int,
+  height: int,
+  hold: int,
   log_file: TextIO,
-  twoline: bool = False,
   console_print: bool = True,
   include_fails: bool = False,
   over_solves: bool = False,
@@ -70,7 +71,7 @@ def percent(
   for wanted_save in wanted_saves:
     asts.append(wanted_saves_parser.parse(wanted_save))
 
-  save_reader = SavesReader(filepath, build, leftover, pc_num, twoline)
+  save_reader = SavesReader(filepath, build, leftover, width, height, hold)
 
   for row in save_reader.read():
     # ignore rows that aren't solveable if out of solves

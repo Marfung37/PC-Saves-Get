@@ -1,7 +1,18 @@
 import argparse
 import json
-from .constants import DEFAULT_SAVES_JSON, DEFAULT_PATH_FILE, DEFAULT_LAST_OUTPUT_FILE, DEFAULT_FILTERED_PATH_FILE, WANTED_SAVE_COMMENT_DELIMITOR, WANTED_SAVE_DELIMITOR
+from .constants import (
+  DEFAULT_SAVES_JSON, 
+  DEFAULT_PATH_FILE, 
+  DEFAULT_LAST_OUTPUT_FILE, 
+  DEFAULT_FILTERED_PATH_FILE, 
+  WANTED_SAVE_COMMENT_DELIMITOR, 
+  WANTED_SAVE_DELIMITOR, 
+  DEFAULT_WIDTH,
+  DEFAULT_HEIGHT,
+  DEFAULT_HOLD
+)
 from .percent import percent
+
 from .filter import filter
 from .utils import is_queue
 
@@ -46,11 +57,6 @@ def parse_percent_args(args):
     print("Expected -k, -w, or -a to be set")
     exit(0)
 
-  # out of bounds pc number
-  if args.pc_num < 1 or 9 < args.pc_num:
-    print("PC Number expected to be within 1-9")
-    exit(0)
-
   # build uses only pieces in TILJSZO
   if not is_queue(args.build) or not is_queue(args.leftover):
     print("Build and Leftover expected to contain only TILJSZO pieces")
@@ -62,17 +68,17 @@ def parse_percent_args(args):
 
   log_file = open(args.log_path, 'w', encoding="utf8")
   if args.all:
-    percent(args.path_file, [], [], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, args.all)
+    percent(args.path_file, [], [], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, args.all)
     log_file.close()
     return
 
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
   if args.best_save:
-    percent(args.path_file, wanted_saves, labels, args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+    percent(args.path_file, wanted_saves, labels, args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
   else:
     for wanted_save, label in zip(wanted_saves, labels):
-      percent(args.path_file, [wanted_save], [label], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+      percent(args.path_file, [wanted_save], [label], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
 
   log_file.close()
 
@@ -82,11 +88,6 @@ def parse_filter_args(args):
   '''
   if not (args.key or args.wanted_saves):
     print("Expected -k or -w to be set")
-    exit(0)
-
-  # out of bounds pc number
-  if args.pc_num < 1 or 9 < args.pc_num:
-    print("PC Number expected to be within 1-9")
     exit(0)
 
   # build uses only pieces in TILJSZO
@@ -103,12 +104,12 @@ def parse_filter_args(args):
     exit(0)
 
   if args.best_save:
-    filter(args.path_file, wanted_saves, labels, args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+    filter(args.path_file, wanted_saves, labels, args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
   else:
     if args.index < -len(wanted_saves) or args.index >= len(wanted_saves):
       print(f"Index out of bounds for wanted saves")
 
-    filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], args.build, args.leftover, args.pc_num, log_file, args.two_line, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+    filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
 
   log_file.close()
 
@@ -123,8 +124,9 @@ percent_parser.add_argument("-a", "--all", help="output all of the saves and cor
 percent_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
 percent_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
 percent_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
-percent_parser.add_argument("-h", "--height", help="height of pc (default: 4)", metavar="<int>", type=int, default=0)
-percent_parser.add_argument("-wi", "--width", help="width of pc (default: 10)", metavar="<int>", type=int, default=0)
+percent_parser.add_argument("-he", "--height", help="height of pc (default: 4)", metavar="<int>", type=int, default=DEFAULT_HEIGHT)
+percent_parser.add_argument("-wi", "--width", help="width of pc (default: 10)", metavar="<int>", type=int, default=DEFAULT_WIDTH)
+percent_parser.add_argument("-ho", "--hold", help="number of hold (default: 1)", metavar="<int>", type=int, default=DEFAULT_HOLD)
 percent_parser.add_argument("-td", "--tree-depth", help="set the tree depth of pieces in percent (default: 0)", metavar="<int>", type=int, default=0)
 percent_parser.add_argument("-f", "--path-file", help="path filepath (default: output/path.csv)", metavar="<filepath>", default=DEFAULT_PATH_FILE, type=str)
 percent_parser.add_argument("-lp", "--log-path", help="output filepath (default: output/last_output.txt)", metavar="<filepath>", default=DEFAULT_LAST_OUTPUT_FILE, type=str)
@@ -140,9 +142,9 @@ filter_parser.add_argument("-k", "--key", help="use wantedPiecesMap.json for pre
 filter_parser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default=0)", metavar="<int>", type=int, default=0)
 filter_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
 filter_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
-filter_parser.add_argument("-pc", "--pc-num", help="pc number for the setup", metavar="<int>", type=int, required=True)
-filter_parser.add_argument("-h", "--height", help="height of pc (default: 4)", metavar="<int>", type=int, default=0)
-filter_parser.add_argument("-wi", "--width", help="width of pc (default: 10)", metavar="<int>", type=int, default=0)
+filter_parser.add_argument("-he", "--height", help="height of pc (default: 4)", metavar="<int>", type=int, default=DEFAULT_HEIGHT)
+filter_parser.add_argument("-wi", "--width", help="width of pc (default: 10)", metavar="<int>", type=int, default=DEFAULT_WIDTH)
+filter_parser.add_argument("-ho", "--hold", help="number of hold (default: 1)", metavar="<int>", type=int, default=DEFAULT_HOLD)
 filter_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (default: False)", action="store_true")
 filter_parser.add_argument("-c", "--cumulative", help="gives percents cumulatively in fumens of a minimal set (default: False)", action="store_true")
 filter_parser.add_argument("-f", "--path-file", help="path filepath (default: output/path.csv)", metavar="<filepath>", default=DEFAULT_PATH_FILE, type=str)

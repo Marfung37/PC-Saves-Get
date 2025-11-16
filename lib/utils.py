@@ -121,7 +121,7 @@ def sort_queue(queue: str) -> str:
   return sorted_queue
 
 def is_queue(text: str) -> bool:
-  return re.match(f'^[{BAG}]+$', text) is not None
+  return re.match(f'^[{BAG}]*$', text) is not None
 
 def queue_val(queue: str) -> int:
   return int(''.join((str(PIECEVALS[p]) for p in queue)))

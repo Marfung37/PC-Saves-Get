@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Optional
 from .formulas import WIDTHHEIGHT2NUMPIECES, LONUM2BAGCOMP
 from .utils import fumen_get_comments, sort_queue
-from .constants import BAG, PCSIZE, HOLD
+from .constants import BAG
 
 COLUMN_QUEUE = 'ツモ'
 COLUMN_FUMEN_COUNT = '対応地形数'
@@ -36,12 +36,15 @@ class SavesRow:
   line: Optional[dict[str, str]] = None
 
 class SavesReader:
-  def __init__(self, filepath: str, build: str, leftover: str, width: int, height: int):
+  def __init__(self, filepath: str, build: str, leftover: str, width: int, height: int, hold: int):
     self.filepath = filepath
     self.build = build
     self.leftover = leftover
+    self.width = width
+    self.height = height
+    self.hold = hold
 
-    bag_comp = LONUM2BAGCOMP(len(self.leftover), WIDTHHEIGHT2NUMPIECES(width, height))
+    bag_comp = LONUM2BAGCOMP(len(self.leftover), WIDTHHEIGHT2NUMPIECES(width, height, hold))
     self.unused_last_bag = _get_unused_last_bag(build, leftover, bag_comp)
     self.leading_size = max(sum(bag_comp[:-1]), len(build))
 
@@ -73,8 +76,8 @@ class SavesReader:
       full_queue = self.build + row[COLUMN_QUEUE]
 
       # check if valid length
-      if not ((len(full_queue) in VALID_4L_PCSIZE) or (self.twoline and len(full_queue) in VALID_2L_PCSIZE)):
-        raise RuntimeError(f"Full queue could not produce a {'2' if self.twoline else '4'}l PC. Likely build {self.build} is too short and thus inaccurate")
+      if WIDTHHEIGHT2NUMPIECES(self.width, self.height, 0) > len(full_queue):
+        raise RuntimeError(f"Full queue could not produce a {self.width}x{self.height} PC. Likely build {self.build} is too short and thus inaccurate")
 
       # get the rest of the pieces in the last bag
       unseen_last_bag_part = self.unused_last_bag - set(full_queue[self.leading_size:])
@@ -109,7 +112,7 @@ class SavesReader:
       yield save_row
 
 if __name__ == '__main__':
-  reader = SavesReader('../output/path.csv', 'OILJO', 'O', 3, True)
+  reader = SavesReader('../output/path.csv', 'OILJO', 'O', 10, 4, 1)
 
   for val in reader.read(assign_fumens=False):
     print(val)

@@ -2,7 +2,9 @@ from os import path
 
 BAG = 'TILJSZO'
 
-HOLD = 1
+DEFAULT_WIDTH = 10
+DEFAULT_HEIGHT = 4
+DEFAULT_HOLD = 1
 
 DIRNAME = path.dirname(path.dirname(__file__))
 DEFAULT_SAVES_JSON = path.join(DIRNAME, "saves.json")

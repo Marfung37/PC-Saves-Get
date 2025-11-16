@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Iterable, TextIO
 from shutil import get_terminal_size
 from .utils import display_fumen, SQUARECHARWIDTH
-from .constants import PCSIZE
+from .constants import DEFAULT_WIDTH
 
 import sys
 sys.setrecursionlimit(5000)
@@ -147,7 +147,7 @@ def pretty_print_fumens(fumens: Iterable[str]) -> str:
   delimitor = '    '
   delimitor_size = 4
 
-  max_cols = get_terminal_size((80, 20)).columns // (PCSIZE * SQUARECHARWIDTH + delimitor_size) 
+  max_cols = get_terminal_size((80, 20)).columns // (DEFAULT_WIDTH * SQUARECHARWIDTH + delimitor_size) 
 
   fields = [field for sublist in map(display_fumen, fumens) for field in sublist]
   chunks = [fields[i:i+max_cols] for i in range(0, len(fields), max_cols)]
