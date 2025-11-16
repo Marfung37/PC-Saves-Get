@@ -77,7 +77,7 @@ class SavesReader:
 
       # check if valid length
       if WIDTHHEIGHT2NUMPIECES(self.width, self.height, 0) > len(full_queue):
-        raise RuntimeError(f"Full queue could not produce a {self.width}x{self.height} PC. Likely build {self.build} is too short and thus inaccurate")
+        raise RuntimeError(f"Full queue could not produce a {self.width}x{self.height} PC. Likely build '{self.build}' is too short or maybe dimensions of PC is incorrect")
 
       # get the rest of the pieces in the last bag
       unseen_last_bag_part = self.unused_last_bag - set(full_queue[self.leading_size:])
