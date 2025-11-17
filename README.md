@@ -44,12 +44,13 @@ Gives the save percentage
 
 `--build` or `-b` - pieces in the build of the setup  
 `--leftover` or `-l` - pieces in the leftover for this pc. This is inital pieces of PC that are part of a bag.  
-`--pc-num` or `-pc` - pc number for the setup  
 
-  * Note: All `-b`, `-l`, and `-pc` are required to run  
+  * Note: Both `-b` and `-l` are required to run  
 
-`--two-line` or `-tl` - setup is two lines (default: false)  
-``--best-save`` or ``-bs`` - enable best save where first wantedSave is priority and second and so on  
+`--width` or `-wi` - width of pc (default: 10)  
+`--height` or `-he` - height of pc (default: 4)  
+`--hold` or `-ho` - number of hold (default: 1)  
+``--best-save`` or ``-bs`` - instead of listing each wanted save separately, it prioritizes the first then second and so on  
 ``--tree-depth`` or ``-td`` - set the tree depth of pieces in percent (default: 0)  
 ``--path-file``  or ``-f`` - path filepath (default: output/path.csv)  
 ``--log-path`` or ``-lp`` - output filepath (default: output/last_output.txt)  
@@ -62,19 +63,20 @@ ___
 Filter path.csv for only solves that meet the wanted saves and outputs the solves
 ### Options
 ``--wanted-save`` or ``-w`` - the save expression  
-``--key`` or ``-k`` - use wantedPiecesMap.json for preset wanted saves  
+``--key`` or ``-k`` - use saves.json for preset wanted saves  
 ``--index`` or ``-i`` - index of -k or -w to pick which expression to filter by (default=0)  
 
   * Note: One of ``-w`` or ``-k`` is required to run filter  
 
 `--build` or `-b` - pieces in the build of the setup  
 `--leftover` or `-l` - pieces in the leftover for this pc. This is inital pieces of PC that are part of a bag.  
-`--pc-num` or `-pc` - pc number for the setup  
 
-  * Note: All `-b`, `-l`, and `-pc` are required to run  
+  * Note: Both `-b` and `-l` are required to run  
 
-`--two-line` or `-tl` - setup is two lines (default: false)  
-``--best-save`` or ``-bs`` - enable best save where first wantedSave is priority and second and so on  
+`--width` or `-wi` - width of pc (default: 10)  
+`--height` or `-he` - height of pc (default: 4)  
+`--hold` or `-ho` - number of hold (default: 1)  
+``--best-save`` or ``-bs`` - instead of listing each wanted save separately, it prioritizes the first then second and so on
 ``--cumulative`` or ``-c`` - gives percents cumulatively in fumens only in a minimal set (default: False)  
 ``--path-file``  or ``-f`` - path filepath (default: output/path.csv)  
 ``--log-path`` or ``-lp`` - output filepath (default: output/last_output.txt)  

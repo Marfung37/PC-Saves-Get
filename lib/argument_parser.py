@@ -144,7 +144,7 @@ percent_parser.add_argument("-os", "--over-solves", help="have the percents be o
 filter_parser = arg_subparsers.add_parser("filter", help="filter path.csv of fumens that doesn't meet the wanted saves")
 filter_parser.set_defaults(func=parse_filter_args)
 filter_parser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
-filter_parser.add_argument("-k", "--key", help="use wantedPiecesMap.json for preset wanted saves (required if there isn't a -w)", metavar="<string>", nargs='+')
+filter_parser.add_argument("-k", "--key", help="use preset wanted saves in the saves json (required if there isn't a -w nor -a)", metavar="<string>", nargs='+')
 filter_parser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default=0)", metavar="<int>", type=int, default=0)
 filter_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
 filter_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
