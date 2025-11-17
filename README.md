@@ -76,7 +76,7 @@ Filter path.csv for only solves that meet the wanted saves and outputs the solve
 `--width` or `-wi` - width of pc (default: 10)  
 `--height` or `-he` - height of pc (default: 4)  
 `--hold` or `-ho` - number of hold (default: 1)  
-``--best-save`` or ``-bs`` - instead of listing each wanted save separately, it prioritizes the first then second and so on
+``--best-save`` or ``-bs`` - instead of listing each wanted save separately, it prioritizes the first then second and so on  
 ``--cumulative`` or ``-c`` - gives percents cumulatively in fumens only in a minimal set (default: False)  
 ``--path-file``  or ``-f`` - path filepath (default: output/path.csv)  
 ``--log-path`` or ``-lp`` - output filepath (default: output/last_output.txt)  
