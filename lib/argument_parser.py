@@ -67,18 +67,21 @@ def parse_percent_args(args):
     exit(0)
 
   log_file = open(args.log_path, 'w', encoding="utf8")
-  if args.all:
-    percent(args.path_file, [], [], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, args.all)
-    log_file.close()
-    return
+  try:
+    if args.all:
+      percent(args.path_file, [], [], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, args.all)
+      log_file.close()
+      return
 
-  wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
+    wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
-  if args.best_save:
-    percent(args.path_file, wanted_saves, labels, args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
-  else:
-    for wanted_save, label in zip(wanted_saves, labels):
-      percent(args.path_file, [wanted_save], [label], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+    if args.best_save:
+      percent(args.path_file, wanted_saves, labels, args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+    else:
+      for wanted_save, label in zip(wanted_saves, labels):
+        percent(args.path_file, [wanted_save], [label], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+  except ValueError as e:
+    print(e)
 
   log_file.close()
 
@@ -103,13 +106,16 @@ def parse_filter_args(args):
     print("Width and height does not produce an area divisible by 4 necessary for a PC")
     exit(0)
 
-  if args.best_save:
-    filter(args.path_file, wanted_saves, labels, args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
-  else:
-    if args.index < -len(wanted_saves) or args.index >= len(wanted_saves):
-      print(f"Index out of bounds for wanted saves")
+  try:
+    if args.best_save:
+      filter(args.path_file, wanted_saves, labels, args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+    else:
+      if args.index < -len(wanted_saves) or args.index >= len(wanted_saves):
+        print(f"Index out of bounds for wanted saves")
 
-    filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+      filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+  except ValueError as e:
+    print(e)
 
   log_file.close()
 

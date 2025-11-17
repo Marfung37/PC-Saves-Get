@@ -60,6 +60,9 @@ class SavesReader:
   def read(self, assign_fumens: bool = False, assign_line: bool = False):
     fumen_labels = {}
 
+    min_num_pieces = WIDTHHEIGHT2NUMPIECES(self.width, self.height, 0)
+    leftover_ctr = Counter(self.leftover)
+
     for row in self.reader:
       saves = []
       save_fumens = []
@@ -73,10 +76,14 @@ class SavesReader:
         continue
 
       full_queue = self.build + row[COLUMN_QUEUE]
+      
+      # simple check for valid build with queue combo compared with leftover
+      if Counter(full_queue[:len(self.leftover) + self.hold]) - leftover_ctr:
+        raise ValueError(f"Impossible build with queues in path.csv (e.g. {full_queue[:len(self.leftover) + self.hold]}) compared to the given leftover {self.leftover}")
 
       # check if valid length
-      if WIDTHHEIGHT2NUMPIECES(self.width, self.height, 0) > len(full_queue):
-        raise RuntimeError(f"Full queue could not produce a {self.width}x{self.height} PC. Likely build '{self.build}' is too short or maybe dimensions of PC is incorrect")
+      if min_num_pieces > len(full_queue):
+        raise ValueError(f"Full queue could not produce a {self.width}x{self.height} PC. Likely build '{self.build}' is too short or maybe dimensions of PC is incorrect")
 
       # get the rest of the pieces in the last bag
       unseen_last_bag_part = self.unused_last_bag - set(full_queue[self.leading_size:])

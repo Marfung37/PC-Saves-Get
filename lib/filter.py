@@ -150,7 +150,7 @@ def generate_minimals(
           largest_index = i
 
       if largest_index == -1:
-        raise Exception("Somehow minimal set isn't minimal")
+        raise RuntimeError("Somehow minimal set isn't minimal")
 
       queue_set |= cover_queues[largest_index]
       cover_count = len(queue_set)
