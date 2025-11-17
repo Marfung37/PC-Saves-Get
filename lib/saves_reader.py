@@ -51,7 +51,7 @@ class SavesReader:
     self.reader = csv.DictReader(self._file)
     if not REQUIRED_COLUMNS.issubset(set(self.reader.fieldnames or [])):
       missing = REQUIRED_COLUMNS - set(self.reader.fieldnames or [])
-      raise ValueError(f"Missing required columns: {', '.join(missing)}")
+      raise ValueError(f"Missing required columns: {', '.join(missing)}. Columns found instead: {', '.join(self.reader.fieldnames or [])}")
 
   def __del__(self):
     self._file.close()
