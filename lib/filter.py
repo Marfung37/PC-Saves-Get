@@ -11,8 +11,9 @@ def filter(
   filepath: str, 
   wanted_saves: list[str],
   labels: list[str],
-  build: str, 
-  leftover: str, 
+  leftover_length: int,
+  unused_leftover: str, 
+  used_next_bags_pieces: str,
   width: int,
   height: int,
   hold: int,
@@ -21,7 +22,7 @@ def filter(
   cumulative_percent: bool = False,
   output_type: str = "minimal",
   output_path: str = "",
-  tinyurl: bool = True,
+  tinyurl: bool = True
 ):
   unique_fumens = set()
   line_queue_fumens_map = {}
@@ -33,7 +34,7 @@ def filter(
   for wanted_save in wanted_saves:
     asts.append(wanted_saves_parser.parse(wanted_save))
 
-  save_reader = SavesReader(filepath, build, leftover, width, height, hold)
+  save_reader = SavesReader(filepath, leftover_length, unused_leftover, used_next_bags_pieces, width, height, hold)
 
   outfile = None
   filtered_path = None
@@ -42,7 +43,13 @@ def filter(
     filtered_path = csv.DictWriter(outfile, PATH_COLUMNS)
     filtered_path.writeheader()
 
+  warnings = set()
+
   for row in save_reader.read(assign_fumens=True, assign_line=True):
+    if row.warn is not None and row.warn not in warnings:
+      warnings.add(row.warn)
+      print(row.warn)
+
     # get first index that satisfies the save
     indicies = []
 

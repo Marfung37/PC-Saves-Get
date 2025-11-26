@@ -16,10 +16,10 @@ COLUMN_FUMENS_DELIMITOR = ';'
 
 REQUIRED_COLUMNS = {COLUMN_QUEUE, COLUMN_UNUSED_PIECES, COLUMN_FUMENS}
 
-def _get_unused_last_bag(build: str, leftover: str, bag_comp: list[int]) -> set[str]:
-  # assumes that not given an impossible build for the leftover and queues in path file
-  non_last_bags = leftover + BAG * (len(bag_comp) - 2)
-  last_bag_pieces_used = Counter(build) - Counter(non_last_bags)
+def _get_unused_last_bag(used_next_bags_pieces: str, bag_comp: list[int]) -> set[str]:
+  # determines what pieces were used in the last bag
+  non_last_bags = BAG * (len(bag_comp) - 2)
+  last_bag_pieces_used = Counter(used_next_bags_pieces) - Counter(non_last_bags)
 
   # the pieces used can at most have one of each piece
   unused_last_bag = Counter(BAG) - last_bag_pieces_used
@@ -33,19 +33,21 @@ class SavesRow:
   queue: str
   fumens: Optional[list[list[str]]] = None
   line: Optional[dict[str, str]] = None
+  warn: Optional[str] = None
 
 class SavesReader:
-  def __init__(self, filepath: str, build: str, leftover: str, width: int, height: int, hold: int):
+  def __init__(self, filepath: str, leftover_length: int, unused_leftover: str, used_next_bags_pieces: str, width: int, height: int, hold: int):
     self.filepath = filepath
-    self.build = build
-    self.leftover = leftover
+    self.leftover_length = leftover_length
+    self.unused_leftover = unused_leftover
+    self.used_next_bags_pieces = used_next_bags_pieces
     self.width = width
     self.height = height
     self.hold = hold
 
-    bag_comp = LONUM2BAGCOMP(len(self.leftover), WIDTHHEIGHT2NUMPIECES(width, height, hold))
-    self.unused_last_bag = _get_unused_last_bag(build, leftover, bag_comp)
-    self.leading_size = max(sum(bag_comp[:-1]), len(build))
+    bag_comp = LONUM2BAGCOMP(leftover_length, WIDTHHEIGHT2NUMPIECES(width, height, hold))
+    self.unused_last_bag = _get_unused_last_bag(used_next_bags_pieces, bag_comp)
+    self.leading_size = len(unused_leftover) + max(sum(bag_comp[1:-1]), len(used_next_bags_pieces))
 
     self._file = open(filepath, 'r', encoding="utf-8-sig")
     self.reader = csv.DictReader(self._file)
@@ -61,7 +63,6 @@ class SavesReader:
     fumen_labels = {}
 
     min_num_pieces = WIDTHHEIGHT2NUMPIECES(self.width, self.height, 0)
-    leftover_ctr = Counter(self.leftover)
 
     for row in self.reader:
       saves = []
@@ -75,15 +76,31 @@ class SavesReader:
         yield save_row
         continue
 
-      full_queue = self.build + row[COLUMN_QUEUE]
-      
-      # simple check for valid build with queue combo compared with leftover
-      if Counter(full_queue[:len(self.leftover) + self.hold]) - leftover_ctr:
-        raise ValueError(f"Impossible build with queues in path.csv (e.g. {full_queue[:len(self.leftover) + self.hold]}) compared to the given leftover {self.leftover}")
+      # expect the first couple pieces are the unused leftover pieces
+      if Counter(row[COLUMN_QUEUE][:len(self.unused_leftover)]) - Counter(self.unused_leftover):
+        raise ValueError(f"Leftover/build inconsistent with queues in path.csv (e.g. starts with {row[COLUMN_QUEUE][:len(self.unused_leftover)]}) compared to the given unused leftover {self.unused_leftover}")
+
+       # not truly full queue as the pieces in leftover - unused_leftover is unknown
+      full_queue = self.unused_leftover + self.used_next_bags_pieces + row[COLUMN_QUEUE][len(self.unused_leftover):]
 
       # check if valid length
-      if min_num_pieces > len(full_queue):
-        raise ValueError(f"Full queue could not produce a {self.width}x{self.height} PC. Likely build '{self.build}' is too short or maybe dimensions of PC is incorrect")
+      if min_num_pieces > len(full_queue) + self.leftover_length - len(self.unused_leftover):
+        raise ValueError(f"Full queue could not produce a {self.width}x{self.height} PC. Likely incorrect pc/leftover length, build is too short, or maybe dimensions of PC is incorrect")
+     
+      # expects after the leftover is a BAG
+      if len(set(full_queue[len(self.unused_leftover):len(self.unused_leftover) + 7])) != len(full_queue[len(self.unused_leftover):len(self.unused_leftover) + 7]):
+        error = f"Leftover/build inconsistent with queues in path.csv (e.g. {row[COLUMN_QUEUE]}). Bag expected "
+        if len(self.used_next_bags_pieces) > 0:
+          error += f"in combining the used subsequent bag pieces '{self.used_next_bags_pieces[:7]}' "
+          if len(self.unused_leftover) > 0:
+            error += f"and pieces after the unused leftover '{self.unused_leftover}' in {row[COLUMN_QUEUE]}, "
+          else:
+            error += f"and first pieces in {row[COLUMN_QUEUE]}, "
+          error += f"but got repeated pieces in '{full_queue[len(self.unused_leftover):len(self.unused_leftover) + 7]}'."
+        else:
+          error += f"in '{row[COLUMN_QUEUE]}', but it has repeated pieces"
+
+        raise ValueError(error)
 
       # get the rest of the pieces in the last bag
       unseen_last_bag_part = self.unused_last_bag - set(full_queue[self.leading_size:])
@@ -114,11 +131,13 @@ class SavesReader:
       save_row = SavesRow(saves, solveable, row[COLUMN_QUEUE])
       if assign_fumens: save_row.fumens = save_fumens
       if assign_line: save_row.line = row
+      elif min_num_pieces + self.hold < len(full_queue) + self.leftover_length - len(self.unused_leftover):
+        save_row.warn = "More pieces than possibly used in path.csv. Maybe the leftover length isn't correct"
 
       yield save_row
 
 if __name__ == '__main__':
-  reader = SavesReader('../output/path.csv', 'OILJO', 'O', 10, 4, 1)
+  reader = SavesReader('../output/path.csv', 4, 'O', 'TI', 10, 4, 1)
 
   for val in reader.read(assign_fumens=False):
     print(val)

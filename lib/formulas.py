@@ -1,5 +1,31 @@
 # Various functions representing useful calculations
 
+def PCNUM2LONUM(pc_num: int) -> int:
+  '''
+  Convert a given pc number to the length of leftover
+
+  Parameters:
+      pc_num(int): a pc number in range 1-9
+
+  Return:
+      int: a length of the leftover in range 1-7
+  '''
+
+  return ((pc_num * 4) + 2) % 7 + 1
+
+def LONUM2PCNUM(leftover_num: int) -> int:
+  '''
+  Convert a given length of leftover to pc number
+
+  Parameters:
+      leftover_num(int): length of the leftover in range 1-7
+
+  Return:
+      int: a pc number in range 1-7
+  '''
+
+  return (leftover_num * 2) % 7 + 1
+
 def WIDTHHEIGHT2NUMPIECES(width: int, height: int, hold: int) -> int:
   area = width * height
   num_pieces, r = divmod(area, 4)

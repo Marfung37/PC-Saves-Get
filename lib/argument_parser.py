@@ -1,5 +1,6 @@
 import argparse
 import json
+from collections import Counter
 from .constants import (
   DEFAULT_SAVES_JSON, 
   DEFAULT_PATH_FILE, 
@@ -11,8 +12,8 @@ from .constants import (
   DEFAULT_HEIGHT,
   DEFAULT_HOLD
 )
+from .formulas import PCNUM2LONUM
 from .percent import percent
-
 from .filter import filter
 from .utils import is_queue
 
@@ -58,28 +59,78 @@ def parse_percent_args(args):
     exit(0)
 
   # build uses only pieces in TILJSZO
-  if not is_queue(args.build) or not is_queue(args.leftover):
-    print("Build and Leftover expected to contain only TILJSZO pieces")
+  if args.build is not None and not is_queue(args.build):
+    print("Build expected to contain only TILJSZO pieces")
     exit(0)
 
+  leftover = args.leftover.split('-')
+
+  # valid leftover
+  if len(leftover) > 2:
+    print("Leftover should contain at most one '-'")
+    exit(0)
+  if not all(map(is_queue, leftover)):
+    print("Leftover expected to contain only TILJSZO pieces aside from '-'")
+    exit(0)
+
+  # valid dimensions to do a PC
   if (args.width * args.height) % 4 != 0:
     print("Width and height does not produce an area divisible by 4 necessary for a PC")
     exit(0)
 
+  leftover_length = args.leftover_length
+  if args.pc_num is not None:
+    # inconsistent pc num and leftover length
+    if leftover_length is not None and PCNUM2LONUM(args.pc_num) != leftover_length:
+      print("Leftover length and PC number are inconsistent")
+      exit(0)
+
+    leftover_length = PCNUM2LONUM(args.pc_num)
+
+  # only the leftover and checks if the options make sense
+  if len(leftover) == 1 and args.build is not None:
+    if args.leftover_length is not None and args.leftover_length != len(leftover[0]):
+      print("Leftover length doesn't match the actual length of leftover")
+      exit(0)
+    if args.pc_num is not None and leftover_length != len(leftover[0]):
+      print("PC number doesn't match the actual length of leftover")
+      exit(0)
+  
+  if leftover_length is None:
+    # leftover length not set from the options
+    print("Either -pc or -ll must be set")
+    exit(0)
+  if leftover_length < 1 or leftover_length > 7:
+    print("Leftover length out of valid 1-7 range")
+    exit(0)
+
+  if len(leftover) == 2 and len(leftover[0]) > args.hold and len(leftover[1]) > 0:
+    # the leftover held more than possible to hold
+    print("More leftover pieces unused than possible to hold")
+    exit(0)
+
+  unused_leftover = leftover[0]
+  used_next_bags_pieces = ''
+  if len(leftover) == 1 and args.build is not None:
+    unused_leftover = ''.join(list(Counter(leftover[0]) - Counter(args.build)))
+    used_next_bags_pieces = ''.join(list(Counter(args.build) - Counter(leftover[0])))
+  elif len(leftover) == 2:
+    used_next_bags_pieces = leftover[1]
+
   log_file = open(args.log_path, 'w', encoding="utf8")
   try:
     if args.all:
-      percent(args.path_file, [], [], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, args.all)
+      percent(args.path_file, [], [], leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, args.all)
       log_file.close()
       return
 
     wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
     if args.best_save:
-      percent(args.path_file, wanted_saves, labels, args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+      percent(args.path_file, wanted_saves, labels, leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
     else:
       for wanted_save, label in zip(wanted_saves, labels):
-        percent(args.path_file, [wanted_save], [label], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+        percent(args.path_file, [wanted_save], [label], leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
   except ValueError as e:
     print(e)
 
@@ -94,26 +145,75 @@ def parse_filter_args(args):
     exit(0)
 
   # build uses only pieces in TILJSZO
-  if not is_queue(args.build) or not is_queue(args.leftover):
-    print("Build and Leftover expected to contain only TILJSZO pieces")
+  if args.build is not None and not is_queue(args.build):
+    print("Build expected to contain only TILJSZO pieces")
     exit(0)
 
-  log_file = open(args.log_path, 'w', encoding="utf8")
+  leftover = args.leftover.split('-')
 
-  wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
-  
+  # valid leftover
+  if len(leftover) > 2:
+    print("Leftover should contain at most one '-'")
+    exit(0)
+  if not all(map(is_queue, leftover)):
+    print("Leftover expected to contain only TILJSZO pieces aside from '-'")
+    exit(0)
+
+  # valid dimensions to do a PC
   if (args.width * args.height) % 4 != 0:
     print("Width and height does not produce an area divisible by 4 necessary for a PC")
     exit(0)
 
+  leftover_length = args.leftover_length
+  if args.pc_num is not None:
+    # inconsistent pc num and leftover length
+    if leftover_length is not None and PCNUM2LONUM(args.pc_num) != leftover_length:
+      print("Leftover length and PC number are inconsistent")
+      exit(0)
+
+    leftover_length = PCNUM2LONUM(args.pc_num)
+
+  # only the leftover and checks if the options make sense
+  if len(leftover) == 1 and args.build is not None:
+    if args.leftover_length is not None and args.leftover_length != len(leftover[0]):
+      print("Leftover length doesn't match the actual length of leftover")
+      exit(0)
+    if args.pc_num is not None and leftover_length != len(leftover[0]):
+      print("PC number doesn't match the actual length of leftover")
+      exit(0)
+  
+  if leftover_length is None:
+    # leftover length not set from the options
+    print("Either -pc or -ll must be set")
+    exit(0)
+  if leftover_length < 1 or leftover_length > 7:
+    print("Leftover length out of valid 1-7 range")
+    exit(0)
+
+  if len(leftover) == 2 and len(leftover[0]) > args.hold and len(leftover[1]) > 0:
+    # the leftover held more than possible to hold
+    print("More leftover pieces unused than possible to hold")
+    exit(0)
+
+  unused_leftover = leftover[0]
+  used_next_bags_pieces = ''
+  if len(leftover) == 1 and args.build is not None:
+    unused_leftover = ''.join(list(Counter(leftover[0]) - Counter(args.build)))
+    used_next_bags_pieces = ''.join(list(Counter(args.build) - Counter(leftover[0])))
+  elif len(leftover) == 2:
+    used_next_bags_pieces = leftover[1]
+
+  log_file = open(args.log_path, 'w', encoding="utf8")
+  wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
+  
   try:
     if args.best_save:
-      filter(args.path_file, wanted_saves, labels, args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+      filter(args.path_file, wanted_saves, labels, leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
     else:
       if args.index < -len(wanted_saves) or args.index >= len(wanted_saves):
         print(f"Index out of bounds for wanted saves")
 
-      filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], args.build, args.leftover, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+      filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
   except ValueError as e:
     print(e)
 
@@ -128,8 +228,10 @@ percent_parser.add_argument("-w", "--wanted-saves", help="the save expression (r
 percent_parser.add_argument("-k", "--key", help="use preset wanted saves in the saves json (required if there isn't a -w nor -a)", metavar="<string>", nargs='+')
 percent_parser.add_argument("-a", "--all", help="output all of the saves and corresponding percents (alternative to not having -k nor -w)", action="store_true")
 percent_parser.add_argument("-bs", "--best-save", help="instead of listing each wanted save separately, it prioritizes the first then second and so on (requires a -w or -k default: false)", action="store_true")
-percent_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
-percent_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
+percent_parser.add_argument("-b", "--build", help="pieces in the build of the setup. Ignored if -l has '-' in expression", metavar="<string>", type=str)
+percent_parser.add_argument("-l", "--leftover", help="leftover pieces for this pc. Supports T-IO for still have T from leftover and used IO from following bag. Not specified implies building setup exactly with all leftover pieces", metavar="<string>", type=str, default='')
+percent_parser.add_argument("-pc", "--pc-num", help="pc number for setup", metavar="<int>", type=int)
+percent_parser.add_argument("-ll", "--leftover-length", help="length of leftover alternative to -pc", metavar="<int>", type=int)
 percent_parser.add_argument("-he", "--height", help="height of pc (default: 4)", metavar="<int>", type=int, default=DEFAULT_HEIGHT)
 percent_parser.add_argument("-wi", "--width", help="width of pc (default: 10)", metavar="<int>", type=int, default=DEFAULT_WIDTH)
 percent_parser.add_argument("-ho", "--hold", help="number of hold (default: 1)", metavar="<int>", type=int, default=DEFAULT_HOLD)
@@ -146,8 +248,10 @@ filter_parser.set_defaults(func=parse_filter_args)
 filter_parser.add_argument("-w", "--wanted-saves", help="the save expression (required if there isn't -k)", metavar="<string>", nargs='+')
 filter_parser.add_argument("-k", "--key", help="use preset wanted saves in the saves json (required if there isn't a -w nor -a)", metavar="<string>", nargs='+')
 filter_parser.add_argument("-i", "--index", help="index of -k or -w to pick which expression to filter by (default=0)", metavar="<int>", type=int, default=0)
-filter_parser.add_argument("-b", "--build", help="pieces in the build of the setup", metavar="<string>", type=str, required=True)
-filter_parser.add_argument("-l", "--leftover", help="pieces leftover for this pc", metavar="<string>", type=str, required=True)
+filter_parser.add_argument("-b", "--build", help="pieces in the build of the setup. Ignored if -l has '-' in expression", metavar="<string>", type=str)
+filter_parser.add_argument("-l", "--leftover", help="leftover pieces for this pc. Supports T-IO for still have T from leftover and used IO from following bag. Not specified implies building setup exactly with all leftover pieces", metavar="<string>", type=str, default='')
+filter_parser.add_argument("-pc", "--pc-num", help="pc number for setup", metavar="<int>", type=int)
+filter_parser.add_argument("-ll", "--leftover-length", help="length of leftover alternative to -pc", metavar="<int>", type=int)
 filter_parser.add_argument("-he", "--height", help="height of pc (default: 4)", metavar="<int>", type=int, default=DEFAULT_HEIGHT)
 filter_parser.add_argument("-wi", "--width", help="width of pc (default: 10)", metavar="<int>", type=int, default=DEFAULT_WIDTH)
 filter_parser.add_argument("-ho", "--hold", help="number of hold (default: 1)", metavar="<int>", type=int, default=DEFAULT_HOLD)

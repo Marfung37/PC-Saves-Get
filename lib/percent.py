@@ -49,8 +49,9 @@ def percent(
   filepath: str, 
   wanted_saves: list[str],
   labels: list[str],
-  build: str, 
-  leftover: str,
+  leftover_length: int,
+  unused_leftover: str, 
+  used_next_bags_pieces: str,
   width: int,
   height: int,
   hold: int,
@@ -71,9 +72,15 @@ def percent(
   for wanted_save in wanted_saves:
     asts.append(wanted_saves_parser.parse(wanted_save))
 
-  save_reader = SavesReader(filepath, build, leftover, width, height, hold)
+  save_reader = SavesReader(filepath, leftover_length, unused_leftover, used_next_bags_pieces, width, height, hold)
+
+  warnings = set()
 
   for row in save_reader.read():
+    if row.warn is not None and row.warn not in warnings:
+      warnings.add(row.warn)
+      print(row.warn)
+
     # ignore rows that aren't solveable if out of solves
     if over_solves and not row.solveable:
       continue
