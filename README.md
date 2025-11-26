@@ -42,10 +42,12 @@ Gives the save percentage
   * Note: At least one of ``-w``, ``-k``, or ``-a`` is required to run percent  
   * Note: If ``-w`` or ``-k``, they will be concatanated together while with ``-a`` will only output all saves
 
-`--build` or `-b` - pieces in the build of the setup  
-`--leftover` or `-l` - pieces in the leftover for this pc. This is inital pieces of PC that are part of a bag.  
+`--build` or `-b` - pieces in the build of the setup. Ignored if -l has '-' in expression  
+`--leftover` or `-l` - leftover pieces for this pc. Supports T-IO for still have T from leftover and used IO from following bag. Not specified implies building setup exactly with all leftover pieces.  
+`--pc-num` or `-pc` - pc number for setup  
+`--leftover-length` or `-ll` - length of leftover alternative to `-pc`  
 
-  * Note: Both `-b` and `-l` are required to run  
+* Note: `-l` is required and one of `-pc` or `-ll` must be set
 
 `--width` or `-wi` - width of pc (default: 10)  
 `--height` or `-he` - height of pc (default: 4)  
@@ -68,10 +70,12 @@ Filter path.csv for only solves that meet the wanted saves and outputs the solve
 
   * Note: One of ``-w`` or ``-k`` is required to run filter  
 
-`--build` or `-b` - pieces in the build of the setup  
-`--leftover` or `-l` - pieces in the leftover for this pc. This is inital pieces of PC that are part of a bag.  
+`--build` or `-b` - pieces in the build of the setup. Ignored if -l has '-' in expression  
+`--leftover` or `-l` - leftover pieces for this pc. Supports T-IO for still have T from leftover and used IO from following bag. Not specified implies building setup exactly with all leftover pieces.  
+`--pc-num` or `-pc` - pc number for setup  
+`--leftover-length` or `-ll` - length of leftover alternative to `-pc`  
 
-  * Note: Both `-b` and `-l` are required to run  
+* Note: `-l` is required and one of `-pc` or `-ll` must be set
 
 `--width` or `-wi` - width of pc (default: 10)  
 `--height` or `-he` - height of pc (default: 4)  
