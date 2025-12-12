@@ -123,6 +123,9 @@ def sort_queue(queue: str) -> str:
 def is_queue(text: str) -> bool:
   return re.match(f'^[{BAG}]*$', text) is not None
 
+def is_wild_queue(text: str) -> bool:
+  return re.match(f'^[{BAG}X]*$', text) is not None
+
 def queue_val(queue: str) -> int:
   return int(''.join((str(PIECEVALS[p]) for p in queue)))
 

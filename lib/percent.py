@@ -49,9 +49,8 @@ def percent(
   filepath: str, 
   wanted_saves: list[str],
   labels: list[str],
-  leftover_length: int,
-  unused_leftover: str, 
-  used_next_bags_pieces: str,
+  leftover: str, 
+  build: str,
   width: int,
   height: int,
   hold: int,
@@ -72,7 +71,7 @@ def percent(
   for wanted_save in wanted_saves:
     asts.append(wanted_saves_parser.parse(wanted_save))
 
-  save_reader = SavesReader(filepath, leftover_length, unused_leftover, used_next_bags_pieces, width, height, hold)
+  save_reader = SavesReader(filepath, leftover, build, width, height, hold)
 
   warnings = set()
 

@@ -50,20 +50,13 @@ def parse_wanted_saves(raw_keys: list[str], raw_wanted_saves: list[str], saves_p
 
   return wanted_saves, labels
 
-def parse_percent_args(args):
-  '''
-  Parse the arguments for percent subcommand to pass to run calculation of save percent
-  '''
-  if not (args.key or args.wanted_saves or args.all):
-    print("Expected -k, -w, or -a to be set")
-    exit(0)
-
+def parse_leftover_build(leftover, leftover_length, build, pc_num, hold) -> tuple[str, str]:
   # build uses only pieces in TILJSZO
-  if args.build is not None and not is_queue(args.build):
+  if build is not None and not is_queue(build):
     print("Build expected to contain only TILJSZO pieces")
     exit(0)
 
-  leftover = args.leftover.split('-')
+  leftover = leftover.split('-')
 
   # valid leftover
   if len(leftover) > 2:
@@ -73,26 +66,20 @@ def parse_percent_args(args):
     print("Leftover expected to contain only TILJSZO pieces aside from '-'")
     exit(0)
 
-  # valid dimensions to do a PC
-  if (args.width * args.height) % 4 != 0:
-    print("Width and height does not produce an area divisible by 4 necessary for a PC")
-    exit(0)
-
-  leftover_length = args.leftover_length
-  if args.pc_num is not None:
+  if pc_num is not None:
     # inconsistent pc num and leftover length
-    if leftover_length is not None and PCNUM2LONUM(args.pc_num) != leftover_length:
+    if leftover_length is not None and PCNUM2LONUM(pc_num) != leftover_length:
       print("Leftover length and PC number are inconsistent")
       exit(0)
 
-    leftover_length = PCNUM2LONUM(args.pc_num)
+    leftover_length = PCNUM2LONUM(pc_num)
 
   # only the leftover and checks if the options make sense
-  if len(leftover) == 1 and args.build is not None:
-    if args.leftover_length is not None and args.leftover_length != len(leftover[0]):
+  if len(leftover) == 1 and build is not None:
+    if leftover_length is not None and leftover_length != len(leftover[0]):
       print("Leftover length doesn't match the actual length of leftover")
       exit(0)
-    if args.pc_num is not None and leftover_length != len(leftover[0]):
+    if pc_num is not None and leftover_length != len(leftover[0]):
       print("PC number doesn't match the actual length of leftover")
       exit(0)
   
@@ -104,33 +91,49 @@ def parse_percent_args(args):
     print("Leftover length out of valid 1-7 range")
     exit(0)
 
-  if len(leftover) == 2 and len(leftover[0]) > args.hold and len(leftover[1]) > 0:
+  if len(leftover) == 2 and len(leftover[0]) > hold and len(leftover[1]) > 0:
     # the leftover held more than possible to hold
     print("More leftover pieces unused than possible to hold")
     exit(0)
 
-  unused_leftover = leftover[0]
-  used_next_bags_pieces = ''
-  if len(leftover) == 1 and args.build is not None:
-    unused_leftover = ''.join(list(Counter(leftover[0]) - Counter(args.build)))
-    used_next_bags_pieces = ''.join(list(Counter(args.build) - Counter(leftover[0])))
+  if len(leftover) == 1 and build is not None:
+    leftover = leftover[0]
   elif len(leftover) == 2:
-    used_next_bags_pieces = leftover[1]
+    used_leftover_length = leftover_length - len(leftover[0])
+    leftover = 'X' * used_leftover_length + leftover[0]
+    build = 'X' * used_leftover_length + leftover[1]
+
+  return leftover, build
+
+def parse_percent_args(args):
+  '''
+  Parse the arguments for percent subcommand to pass to run calculation of save percent
+  '''
+  if not (args.key or args.wanted_saves or args.all):
+    print("Expected -k, -w, or -a to be set")
+    exit(0)
+
+  # valid dimensions to do a PC
+  if (args.width * args.height) % 4 != 0:
+    print("Width and height does not produce an area divisible by 4 necessary for a PC")
+    exit(0)
+
+  leftover, build = parse_leftover_build(args.leftover, args.leftover_length, args.build, args.pc_num, args.hold)
 
   log_file = open(args.log_path, 'w', encoding="utf8")
   try:
     if args.all:
-      percent(args.path_file, [], [], leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, args.all)
+      percent(args.path_file, [], [], leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, args.all)
       log_file.close()
       return
 
     wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
     if args.best_save:
-      percent(args.path_file, wanted_saves, labels, leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+      percent(args.path_file, wanted_saves, labels, leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
     else:
       for wanted_save, label in zip(wanted_saves, labels):
-        percent(args.path_file, [wanted_save], [label], leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+        percent(args.path_file, [wanted_save], [label], leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
   except ValueError as e:
     print(e)
 
