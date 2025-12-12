@@ -56,6 +56,11 @@ def parse_leftover_build(leftover, leftover_length, build, pc_num, hold) -> tupl
     print("Build expected to contain only TILJSZO pieces")
     exit(0)
 
+  # build uses only pieces in TILJSZO
+  if not leftover and build is not None:
+    print("-l must be set")
+    exit(0)
+
   leftover = leftover.split('-')
 
   # valid leftover
