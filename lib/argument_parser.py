@@ -76,13 +76,13 @@ def parse_leftover_build(leftover, leftover_length, build, pc_num, hold) -> tupl
 
   # only the leftover and checks if the options make sense
   if len(leftover) == 1 and build is not None:
-    if leftover_length is not None and leftover_length != len(leftover[0]):
-      print("Leftover length doesn't match the actual length of leftover")
-      exit(0)
     if pc_num is not None and leftover_length != len(leftover[0]):
       print("PC number doesn't match the actual length of leftover")
       exit(0)
-  
+    if leftover_length is not None and leftover_length != len(leftover[0]):
+      print("Leftover length doesn't match the actual length of leftover")
+      exit(0)
+ 
   if leftover_length is None:
     # leftover length not set from the options
     print("Either -pc or -ll must be set")
@@ -90,6 +90,9 @@ def parse_leftover_build(leftover, leftover_length, build, pc_num, hold) -> tupl
   if leftover_length < 1 or leftover_length > 7:
     print("Leftover length out of valid 1-7 range")
     exit(0)
+
+  if len(leftover) == 1 and len(leftover[0]) < leftover_length:
+    leftover.append('')
 
   if len(leftover) == 2 and len(leftover[0]) > hold and len(leftover[1]) > 0:
     # the leftover held more than possible to hold
@@ -100,8 +103,19 @@ def parse_leftover_build(leftover, leftover_length, build, pc_num, hold) -> tupl
     leftover = leftover[0]
   elif len(leftover) == 2:
     used_leftover_length = leftover_length - len(leftover[0])
-    leftover = 'X' * used_leftover_length + leftover[0]
     build = 'X' * used_leftover_length + leftover[1]
+    leftover = 'X' * used_leftover_length + leftover[0]
+
+  leftover_ctr = Counter(leftover)
+  build_ctr = Counter(build)
+  only_leftover_build = build_ctr < leftover_ctr # build is only using leftover
+  unused_leftover = leftover_ctr - build_ctr # leftover pieces not used
+
+  # check if build and leftover even make sense with the hold
+  if not only_leftover_build and unused_leftover.total() > hold:
+    # more unused leftover pieces than what can be held
+    print(f"Not possible to build {build} with given leftover {leftover} with hold {hold}")
+    exit(0)
 
   return leftover, build
 
@@ -147,76 +161,24 @@ def parse_filter_args(args):
     print("Expected -k or -w to be set")
     exit(0)
 
-  # build uses only pieces in TILJSZO
-  if args.build is not None and not is_queue(args.build):
-    print("Build expected to contain only TILJSZO pieces")
-    exit(0)
-
-  leftover = args.leftover.split('-')
-
-  # valid leftover
-  if len(leftover) > 2:
-    print("Leftover should contain at most one '-'")
-    exit(0)
-  if not all(map(is_queue, leftover)):
-    print("Leftover expected to contain only TILJSZO pieces aside from '-'")
-    exit(0)
-
   # valid dimensions to do a PC
   if (args.width * args.height) % 4 != 0:
     print("Width and height does not produce an area divisible by 4 necessary for a PC")
     exit(0)
 
-  leftover_length = args.leftover_length
-  if args.pc_num is not None:
-    # inconsistent pc num and leftover length
-    if leftover_length is not None and PCNUM2LONUM(args.pc_num) != leftover_length:
-      print("Leftover length and PC number are inconsistent")
-      exit(0)
-
-    leftover_length = PCNUM2LONUM(args.pc_num)
-
-  # only the leftover and checks if the options make sense
-  if len(leftover) == 1 and args.build is not None:
-    if args.leftover_length is not None and args.leftover_length != len(leftover[0]):
-      print("Leftover length doesn't match the actual length of leftover")
-      exit(0)
-    if args.pc_num is not None and leftover_length != len(leftover[0]):
-      print("PC number doesn't match the actual length of leftover")
-      exit(0)
-  
-  if leftover_length is None:
-    # leftover length not set from the options
-    print("Either -pc or -ll must be set")
-    exit(0)
-  if leftover_length < 1 or leftover_length > 7:
-    print("Leftover length out of valid 1-7 range")
-    exit(0)
-
-  if len(leftover) == 2 and len(leftover[0]) > args.hold and len(leftover[1]) > 0:
-    # the leftover held more than possible to hold
-    print("More leftover pieces unused than possible to hold")
-    exit(0)
-
-  unused_leftover = leftover[0]
-  used_next_bags_pieces = ''
-  if len(leftover) == 1 and args.build is not None:
-    unused_leftover = ''.join(list(Counter(leftover[0]) - Counter(args.build)))
-    used_next_bags_pieces = ''.join(list(Counter(args.build) - Counter(leftover[0])))
-  elif len(leftover) == 2:
-    used_next_bags_pieces = leftover[1]
+  leftover, build = parse_leftover_build(args.leftover, args.leftover_length, args.build, args.pc_num, args.hold)
 
   log_file = open(args.log_path, 'w', encoding="utf8")
   wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
   
   try:
     if args.best_save:
-      filter(args.path_file, wanted_saves, labels, leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+      filter(args.path_file, wanted_saves, labels, leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
     else:
       if args.index < -len(wanted_saves) or args.index >= len(wanted_saves):
         print(f"Index out of bounds for wanted saves")
 
-      filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], leftover_length, unused_leftover, used_next_bags_pieces, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+      filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
   except ValueError as e:
     print(e)
 

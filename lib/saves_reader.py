@@ -36,10 +36,10 @@ class SavesRow:
   warn: Optional[str] = None
 
 class SavesReader:
-  def __init__(self, filepath: str, build: str, leftover: str, width: int, height: int, hold: int):
+  def __init__(self, filepath: str, leftover: str, build: str, width: int, height: int, hold: int):
     self.filepath = filepath
-    self.build = build
     self.leftover = leftover
+    self.build = build
     self.width = width
     self.height = height
     self.hold = hold
@@ -55,16 +55,6 @@ class SavesReader:
       raise ValueError(f"Missing required columns: {', '.join(missing)}. Columns found instead: {', '.join(self.reader.fieldnames or [])}")
 
 
-    leftover_ctr = Counter(self.leftover)
-    build_ctr = Counter(self.build)
-    self.only_leftover_build = build_ctr < leftover_ctr # build is only using leftover
-    self.unused_leftover = leftover_ctr - build_ctr # leftover pieces not used
-
-    # check if build and leftover even make sense with the hold
-    if not self.only_leftover_build and self.unused_leftover.total() > self.hold:
-      # more unused leftover pieces than what can be held
-      raise ValueError(f"Not possible to build {self.build} with given leftover {self.leftover} with hold {self.hold}")
-
   def __del__(self):
     self._file.close()
     del self._file
@@ -74,6 +64,8 @@ class SavesReader:
 
     min_num_pieces = WIDTHHEIGHT2NUMPIECES(self.width, self.height, 0)
     leftover_ctr = Counter(self.leftover)
+    build_ctr = Counter(self.build)
+    unused_leftover = leftover_ctr - build_ctr # leftover pieces not used
 
     for row in self.reader:
       saves = []
@@ -91,14 +83,14 @@ class SavesReader:
       
       # since some leftover isn't used then shows up in the queue
       # check if what is expected to be the first pieces is leftover pieces
-      if Counter(row[COLUMN_QUEUE][:self.unused_leftover.total()]) != self.unused_leftover:
-        raise ValueError(f"Found {row[COLUMN_QUEUE]} in path.csv, but expected to start with pieces not used from leftover {''.join(self.unused_leftover.elements())}")
+      if Counter(row[COLUMN_QUEUE][:unused_leftover.total()]) != unused_leftover:
+        raise ValueError(f"Found {row[COLUMN_QUEUE]} in path.csv, but expected to start with pieces not used from leftover {''.join(unused_leftover.elements())}")
 
       # check if valid length
       if min_num_pieces > len(full_queue):
         raise ValueError(f"Full queue could not produce a {self.width}x{self.height} PC. Likely build '{self.build}' ('X' denotes unknown piece) is too short or maybe dimensions of PC is incorrect")
 
-      following_bag = Counter(full_queue[len(self.leftover) + 7]) - leftover_ctr
+      following_bag = Counter(full_queue[:len(self.leftover) + 7]) - leftover_ctr
 
       if len(set(following_bag)) != following_bag.total():
         raise ValueError(f"Leftover/build inconsistent with queues in path.csv (e.g. {row[COLUMN_QUEUE]}). Bag expected for first 7 pieces not part of leftover {''.join(following_bag.elements())} but got repeated pieces.")
