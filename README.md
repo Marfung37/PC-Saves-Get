@@ -40,14 +40,14 @@ Gives the save percentage
 ``--all`` or ``-a`` - output all of the saves and corresponding percents  
 
   * Note: At least one of ``-w``, ``-k``, or ``-a`` is required to run percent  
-  * Note: If ``-w`` or ``-k``, they will be concatanated together while with ``-a`` will only output all saves
+  * Note: If ``-w`` or ``-k``, they will be concatenated together while with ``-a`` will only output all saves
 
 `--build` or `-b` - pieces in the build of the setup. Ignored if -l has '-' in expression  
 `--leftover` or `-l` - leftover pieces for this pc. Supports T-IO for still have T from leftover and used IO from following bag. Not specified implies building setup exactly with all leftover pieces.  
 `--pc-num` or `-pc` - pc number for setup  
 `--leftover-length` or `-ll` - length of leftover alternative to `-pc`  
 
-* Note: `-l` is required and one of `-pc` or `-ll` must be set
+* Note: One of `-pc` or `-ll` must be set and usually `-l` set
 
 `--width` or `-wi` - width of pc (default: 10)  
 `--height` or `-he` - height of pc (default: 4)  
@@ -57,7 +57,7 @@ Gives the save percentage
 ``--path-file``  or ``-f`` - path filepath (default: output/path.csv)  
 ``--log-path`` or ``-lp`` - output filepath (default: output/last_output.txt)  
 ``--saves-path`` or ``-sp`` - path to json file with preset wanted saves (default: GITROOT/saves.json)  
-``--console-print`` or ``-pr`` - log to terminal (default: true)  
+``--no-print`` or ``-nr`` - don't print out the output into the terminal (default: false)  
 ``--fails`` or ``-fa`` - include the fail queues for saves in output (default: false)  
 ``--over-solves`` or ``-os`` - have the percents be out of when setup is solvable (default: false)  
 ___
@@ -75,17 +75,17 @@ Filter path.csv for only solves that meet the wanted saves and outputs the solve
 `--pc-num` or `-pc` - pc number for setup  
 `--leftover-length` or `-ll` - length of leftover alternative to `-pc`  
 
-* Note: `-l` is required and one of `-pc` or `-ll` must be set
+* Note: One of `-pc` or `-ll` must be set and usually `-l` set
 
 `--width` or `-wi` - width of pc (default: 10)  
 `--height` or `-he` - height of pc (default: 4)  
 `--hold` or `-ho` - number of hold (default: 1)  
 ``--best-save`` or ``-bs`` - instead of listing each wanted save separately, it prioritizes the first then second and so on  
-``--cumulative`` or ``-c`` - gives percents cumulatively in fumens only in a minimal set (default: False)  
+``--cumulative`` or ``-c`` - gives percents cumulatively in fumens only in a minimal set (default: false)  
 ``--path-file``  or ``-f`` - path filepath (default: output/path.csv)  
 ``--log-path`` or ``-lp`` - output filepath (default: output/last_output.txt)  
 ``--saves-path`` or ``-sp`` - path to json file with preset wanted saves (default: GITROOT/saves.json)  
 ``--filtered-path`` or ``-fp`` - output filtered path file with solve of \"file\" (default: output/filtered_path.txt)  
-``--console-print`` or ``-pr`` - print out the output into the terminal (default: true)  
+``--no-print`` or ``-nr`` - don't print out the output into the terminal (default: false)  
 ``--solve`` or ``-s`` - setting for how to output solve (minimal, unique, file) (default: minimal)  
-``--tinyurl`` or ``-t`` - output the link with tinyurl if possible. If false, outputs fumen code (default: true)  
+``--tinyurl`` or ``-t`` - output the link with tinyurl if possible. If false, outputs fumen code (default: false)  
