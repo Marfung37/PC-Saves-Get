@@ -90,6 +90,13 @@ def filter(
   if outfile is not None:
     outfile.close()
 
+  # No solutions
+  if (output_type == "unique" and len(unique_fumens) == 0) or (output_type == "minimal" and len(line_fumens) == 0):
+    log_file.write("No solutions found")
+    if console_print:
+      print("No solutions found")
+    return
+
   if output_type == "unique":
     # combine all the fumens together
     unique_solves = fumen_combine(list(unique_fumens))

@@ -142,17 +142,17 @@ def parse_percent_args(args):
   log_file = open(args.log_path, 'w', encoding="utf8")
   try:
     if args.all:
-      percent(args.path_file, [], [], leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, args.all)
+      percent(args.path_file, [], [], leftover, build, args.width, args.height, args.hold, log_file, not args.no_print, args.fails, args.over_solves, args.all)
       log_file.close()
       return
 
     wanted_saves, labels = parse_wanted_saves(args.key, args.wanted_saves, args.saves_path)
 
     if args.best_save:
-      percent(args.path_file, wanted_saves, labels, leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+      percent(args.path_file, wanted_saves, labels, leftover, build, args.width, args.height, args.hold, log_file, not args.no_print, args.fails, args.over_solves, False, args.tree_depth)
     else:
       for wanted_save, label in zip(wanted_saves, labels):
-        percent(args.path_file, [wanted_save], [label], leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.fails, args.over_solves, False, args.tree_depth)
+        percent(args.path_file, [wanted_save], [label], leftover, build, args.width, args.height, args.hold, log_file, not args.no_print, args.fails, args.over_solves, False, args.tree_depth)
   except ValueError as e:
     print(e)
 
@@ -178,12 +178,12 @@ def parse_filter_args(args):
   
   try:
     if args.best_save:
-      filter(args.path_file, wanted_saves, labels, leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+      filter(args.path_file, wanted_saves, labels, leftover, build, args.width, args.height, args.hold, log_file, not args.no_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
     else:
       if args.index < -len(wanted_saves) or args.index >= len(wanted_saves):
         print(f"Index out of bounds for wanted saves")
 
-      filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], leftover, build, args.width, args.height, args.hold, log_file, args.console_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
+      filter(args.path_file, [wanted_saves[args.index]], [labels[args.index]], leftover, build, args.width, args.height, args.hold, log_file, not args.no_print, args.cumulative, args.solve, args.filtered_path, args.tinyurl)
   except ValueError as e:
     print(e)
 
@@ -209,7 +209,7 @@ percent_parser.add_argument("-td", "--tree-depth", help="set the tree depth of p
 percent_parser.add_argument("-f", "--path-file", help="path filepath (default: output/path.csv)", metavar="<filepath>", default=DEFAULT_PATH_FILE, type=str)
 percent_parser.add_argument("-lp", "--log-path", help="output filepath (default: output/last_output.txt)", metavar="<filepath>", default=DEFAULT_LAST_OUTPUT_FILE, type=str)
 percent_parser.add_argument("-sp", "--saves-path", help="path to json file with preset wanted saves (default: GITROOT/saves.json)", metavar="<filepath>", default=DEFAULT_SAVES_JSON, type=str)
-percent_parser.add_argument("-pr", "--console-print", help="log to terminal (default: True)", action="store_false")
+percent_parser.add_argument("-np", "--no-print", help="don't log to terminal", action="store_true")
 percent_parser.add_argument("-fa", "--fails", help="include the fail queues for saves in output (default: False)", action="store_true")
 percent_parser.add_argument("-os", "--over-solves", help="have the percents be out of when setup is solvable (default: False)", action="store_true")
 
@@ -231,7 +231,7 @@ filter_parser.add_argument("-f", "--path-file", help="path filepath (default: ou
 filter_parser.add_argument("-lp", "--log-path", help="output filepath (default: output/last_output.txt)", metavar="<filepath>", default=DEFAULT_LAST_OUTPUT_FILE, type=str)
 filter_parser.add_argument("-sp", "--saves-path", help="path to json file with preset wanted saves (default: GITROOT/saves.json)", metavar="<filepath>", default=DEFAULT_SAVES_JSON, type=str)
 filter_parser.add_argument("-fp", "--filtered-path", help="output filtered path file with solve of \"file\" (default: output/filtered_path.txt)", metavar="<filepath>", default=DEFAULT_FILTERED_PATH_FILE, type=str)
-filter_parser.add_argument("-pr", "--console-print", help="log to terminal (default: True)", action="store_false")
+filter_parser.add_argument("-np", "--no-print", help="don't log to terminal", action="store_true")
 filter_parser.add_argument("-s", "--solve", help="setting for how to output solve (minimal, unique, file) (default: minimal)", choices={"minimal", "unique", "file"}, metavar="<string>", default="minimal", type=str)
-filter_parser.add_argument("-t", "--tinyurl", help="output the link with tinyurl if possible (default: True)", action="store_false")
+filter_parser.add_argument("-t", "--tinyurl", help="output the link with tinyurl if possible", action="store_true")
 
