@@ -87,12 +87,12 @@ True minimal for O:
 v115@9gzhilR4A8i0wwglAtR4D8xwBtF8g0wwAtE8JeAgWm?A6untCMOUABBoo2AS7HOBwngHBFbcRAS0+5AUOaHBQecRAy?lAAA9gi0wwilR4A8zhglAtR4D8xwBtF8g0wwAtE8JeAgWkA?ad9VC0PUABBoo2AWFjHBFrnRASo78A48o2AvfEEBwnAVB'
 test_case "Null case with 2nd PC with no leftover" "filter -w T -pc 2 -f $PROJ_DIR/tests/testPath2-1.csv -lp /dev/null" "No solutions found"
 
-# errors
+# TODO: test validity on queues not just directly specifable with sfinder pattern format
+test_case "2nd QB setup" "percent -w S -pc 2 -f $PROJ_DIR/tests/testPath2-3.csv -lp /dev/null" "S: 5.95% [30/504]"
+
+# TODO: errors
 test_case "Invalid build" "percent -w I -pc 1 -l TILJSZO -b ILSz -f $PROJ_DIR/tests/testPath1.csv -lp /dev/null" "Build expected to contain only TILJSZO pieces"
 test_case "Invalid no leftover but with build" "percent -w I -pc 1 -b ILSZ -f $PROJ_DIR/tests/testPath1.csv -lp /dev/null" "-l must be set"
-
-
-
 
 # -------------------------------
 
