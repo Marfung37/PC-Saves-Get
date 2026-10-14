@@ -1,8 +1,11 @@
-from typing import TextIO
 from dataclasses import dataclass
+from typing import TextIO
+
+from .parser import Parser as WantedSavesParser
+from .parser import evaluate_ast
 from .saves_reader import SavesReader
-from .parser import Parser as WantedSavesParser, evaluate_ast
 from .utils import any_index, queue_val, sort_queue
+
 
 @dataclass
 class PercentNode:
@@ -97,7 +100,7 @@ def percent(
       if len(row.saves) == 0:
         index = None
       else:
-        index = any_index(map(lambda ast: evaluate_ast(ast, row.saves), asts))
+        index = any_index(evaluate_ast(ast, row.saves) for ast in asts)
 
       if index is not None:
         for node in _get_nodes(row.queue, saveable_counters[index], tree_depth):

@@ -1,21 +1,32 @@
 # code based on https://github.com/eight04/sfinder-strict-minimal/blob/master/index.js
 
-from dataclasses import dataclass
-from typing import Iterable, TextIO
-from shutil import get_terminal_size
-from .utils import display_fumen, SQUARECHARWIDTH
-from .constants import DEFAULT_WIDTH
-
 import sys
+from collections.abc import Iterable
+from dataclasses import dataclass
+from shutil import get_terminal_size
+from typing import TextIO
+
+from .constants import DEFAULT_WIDTH
+from .utils import SQUARECHARWIDTH, display_fumen
+
 sys.setrecursionlimit(5000)
 
+
 class Node:
-  def __init__(self, key: str, edges: set["Edge"], color: int, alter: list["Node"], redundant: bool = False):
+  def __init__(
+    self,
+    key: str,
+    edges: set["Edge"],
+    color: int,
+    alter: list["Node"],
+    redundant: bool = False,
+  ):
     self.key = key
     self.edges = edges
     self.color = color
     self.alter = alter
     self.redundant = redundant
+
 
 class Edge:
   def __init__(self, nodes: set[Node], color: int, redundant: bool | None = None):
@@ -23,42 +34,40 @@ class Edge:
     self.color = color
     self.redundant = redundant
 
+
 @dataclass
 class Graph:
   edges: list[Edge]
   nodes: list[Node]
+
 
 @dataclass
 class MinimalSets:
   count: int
   sets: list[list[Node]]
 
+
 class FumenStore:
-  fumen_map: dict[str, Node] = {}
+  fumen_map: dict[str, Node]
+
+  def __init__(self):
+    self.fumen_map = {}
 
   def fumen_to_node(self, fumen: str) -> Node:
-    if (fumen in self.fumen_map):
+    if fumen in self.fumen_map:
       return self.fumen_map[fumen]
 
     node = Node(fumen, set(), 0, [])
     self.fumen_map[fumen] = node
-    return node;
+    return node
 
   def get_nodes(self) -> list[Node]:
     return list(self.fumen_map.values())
 
+
 def fumens_to_graph(fumens: list[list[str]]):
   fumen_store = FumenStore()
-  edges: list[Edge] = list(
-    map(
-      lambda f: 
-        Edge(
-          set(map(fumen_store.fumen_to_node, f)),
-          0
-        ), 
-      fumens
-    )
-  )
+  edges: list[Edge] = [Edge(set(map(fumen_store.fumen_to_node, f)), 0) for f in fumens]
 
   for edge in edges:
     for node in edge.nodes:
@@ -67,10 +76,12 @@ def fumens_to_graph(fumens: list[list[str]]):
   edges.sort(key=lambda a: len(a.nodes))
 
   for edge in edges:
-    if edge.redundant: continue
+    if edge.redundant:
+      continue
 
     for sibling_edge in set_first(edge.nodes).edges:
-      if sibling_edge is edge: continue
+      if sibling_edge is edge:
+        continue
 
       if edge.nodes.issubset(sibling_edge.nodes):
         sibling_edge.redundant = True
@@ -84,10 +95,12 @@ def fumens_to_graph(fumens: list[list[str]]):
   clean_nodes = list(filter(lambda n: len(n.edges), nodes))
 
   for node in clean_nodes:
-    if node.redundant: continue
+    if node.redundant:
+      continue
 
     for sibling_node in set_first(node.edges).nodes:
-      if sibling_node is node: continue
+      if sibling_node is node:
+        continue
 
       if sibling_node.edges == node.edges:
         sibling_node.redundant = True
@@ -96,10 +109,8 @@ def fumens_to_graph(fumens: list[list[str]]):
   for edge in clean_edges:
     edge.nodes = {node for node in edge.nodes if not node.redundant}
 
-  return Graph(
-    clean_edges,
-    list(filter(lambda n: not n.redundant, clean_nodes))
-  )
+  return Graph(clean_edges, list(filter(lambda n: not n.redundant, clean_nodes)))
+
 
 def find_minimal_nodes(edges: list[Edge]) -> MinimalSets:
   current_nodes: list[Node] = []
@@ -108,30 +119,31 @@ def find_minimal_nodes(edges: list[Edge]) -> MinimalSets:
 
   def digest(index: int = 0) -> None:
     nonlocal result_count, result_node_set
-    if (len(current_nodes) > result_count): return;
-    
-    if (index >= len(edges)):
-      if (len(current_nodes) < result_count):
-        result_count = len(current_nodes);
-        result_node_set = [];
-      result_node_set.append(current_nodes.copy());
-      return;
-    
-    edge = edges[index];
-    
-    if (edge.color):
-      digest(index + 1);
-      return;
-    
+    if len(current_nodes) > result_count:
+      return
+
+    if index >= len(edges):
+      if len(current_nodes) < result_count:
+        result_count = len(current_nodes)
+        result_node_set = []
+      result_node_set.append(current_nodes.copy())
+      return
+
+    edge = edges[index]
+    if edge.color:
+      digest(index + 1)
+      return
+
     for node in edge.nodes:
-      node.color += 1;
-      if node.color > 1: continue # the node has been tried by other edges
-      
-      current_nodes.append(node);
+      node.color += 1
+      if node.color > 1:
+        continue  # the node has been tried by other edges
+
+      current_nodes.append(node)
       for siblingEdge in node.edges:
-        siblingEdge.color += 1;
-      digest(index + 1);
-      current_nodes.pop();
+        siblingEdge.color += 1
+      digest(index + 1)
+      current_nodes.pop()
       for siblingEdge in node.edges:
         siblingEdge.color -= 1
     for node in edge.nodes:
@@ -140,19 +152,26 @@ def find_minimal_nodes(edges: list[Edge]) -> MinimalSets:
   digest()
   return MinimalSets(int(result_count), result_node_set)
 
+
 def set_first(s: set):
   return next(iter(s))
 
+
 def pretty_print_fumens(fumens: Iterable[str]) -> str:
-  delimitor = '    '
+  delimitor = "    "
   delimitor_size = 4
 
-  max_cols = get_terminal_size((80, 20)).columns // (DEFAULT_WIDTH * SQUARECHARWIDTH + delimitor_size) 
+  max_cols = get_terminal_size((80, 20)).columns // (
+    DEFAULT_WIDTH * SQUARECHARWIDTH + delimitor_size
+  )
 
   fields = [field for sublist in map(display_fumen, fumens) for field in sublist]
-  chunks = [fields[i:i+max_cols] for i in range(0, len(fields), max_cols)]
+  chunks = [fields[i : i + max_cols] for i in range(0, len(fields), max_cols)]
 
-  return '\n\n'.join(['\n'.join([delimitor.join(col) for col in zip(*chunk)]) for chunk in chunks])
+  return "\n\n".join(
+    ["\n".join([delimitor.join(col) for col in zip(*chunk)]) for chunk in chunks]
+  )
+
 
 # prompting for getting set
 def find_best_set(sets: list[list[Node]], log_file: TextIO | None = None) -> list[Node]:
@@ -164,22 +183,21 @@ def find_best_set(sets: list[list[Node]], log_file: TextIO | None = None) -> lis
     set1 = set(sets[1])
     diffA = set0 - set1
     diffB = set1 - set0
-   
+
     output += "Option 1:\n"
-    output += pretty_print_fumens(map(lambda n: n.key, diffA)) + '\n'
+    output += pretty_print_fumens(n.key for n in diffA) + "\n"
     output += "Option 2:\n"
-    output += pretty_print_fumens(map(lambda n: n.key, diffB)) + '\n'
+    output += pretty_print_fumens(n.key for n in diffB) + "\n"
 
     print(output)
 
     result = input("Which is better? 1 or 2: ")
 
     if log_file is not None:
-      output += "Which is better? 1 or 2: " + result + '\n'
+      output += "Which is better? 1 or 2: " + result + "\n"
       log_file.write(output)
 
-    dropNodes = diffB if result == '2' else diffA;
-    sets = list(filter(lambda s: dropNodes.issubset(s), sets));
+    dropNodes = diffB if result == "2" else diffA
+    sets = list(filter(lambda s: dropNodes.issubset(s), sets))
 
   return sets[0]
-

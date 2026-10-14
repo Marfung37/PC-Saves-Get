@@ -1,6 +1,7 @@
 import re
 from collections import Counter
 from collections.abc import Callable
+
 from .utils import all_index
 
 TOKEN_SPEC = [
@@ -133,7 +134,7 @@ class Parser:
   def _parse_atom(self):
     token = self._peek()
     if token is None:
-      raise ValueError(f"Reached each of tokens too early")
+      raise ValueError("Reached each of tokens too early")
 
     # if parentheses
     if token.kind == 'LPAREN':
@@ -146,13 +147,13 @@ class Parser:
     elif token.kind == 'REGEX':
       regex_expr = self._consume('REGEX')
       if regex_expr.value is None:
-        raise ValueError(f"No regex expression found for REGEX token")
+        raise ValueError("No regex expression found for REGEX token")
       return RegexLiteral(regex_expr.value) 
 
     elif token.kind == 'PIECES':
       pieces = self._consume('PIECES')
       if pieces.value is None:
-        raise ValueError(f"No pieces found for PIECES token")
+        raise ValueError("No pieces found for PIECES token")
       return PiecesLiteral(pieces.value)
 
     else:
@@ -165,13 +166,13 @@ def evaluate_ast(node, saves: list[str]) -> bool:
   if isinstance(node, PiecesLiteral):
     # if save within any of the saves
     wantedSaveCount = Counter(node.value)
-    return any(map(lambda save: wantedSaveCount <= Counter(save), saves))
+    return any(wantedSaveCount <= Counter(save) for save in saves)
 
   elif isinstance(node, RegexLiteral):
     try:
       # Compile the regex and check for a match
       pattern = re.compile(node.value)
-      return any(map(lambda save: pattern.search(save), saves))
+      return any(pattern.search(save) for save in saves)
     except re.error as e:
       raise ValueError(f"Invalid regex: '{node.value}' - {e}")
   elif isinstance(node, UnaryOp):
@@ -179,7 +180,7 @@ def evaluate_ast(node, saves: list[str]) -> bool:
       return not evaluate_ast(node.expr, saves)
     elif node.op == 'AVOID':
       # if there is at least one that is not the expression
-      return any(map(lambda save: not evaluate_ast(node.expr, [save]), saves))
+      return any(not evaluate_ast(node.expr, [save]) for save in saves)
 
   elif isinstance(node, BinaryOp):
     # Evaluate left side first
@@ -201,13 +202,13 @@ def evaluate_ast_all(node, saves: list[str]) -> list[int]:
   if isinstance(node, PiecesLiteral):
     # if save within any of the saves
     wantedSaveCount = Counter(node.value)
-    return all_index(map(lambda save: wantedSaveCount <= Counter(save), saves))
+    return all_index(wantedSaveCount <= Counter(save) for save in saves)
 
   elif isinstance(node, RegexLiteral):
     try:
       # Compile the regex and check for a match
       pattern = re.compile(node.value)
-      return all_index(map(lambda save: bool(pattern.search(save)), saves))
+      return all_index(bool(pattern.search(save)) for save in saves)
     except re.error as e:
       raise ValueError(f"Invalid regex: '{node.value}' - {e}")
   elif isinstance(node, UnaryOp):
@@ -215,7 +216,7 @@ def evaluate_ast_all(node, saves: list[str]) -> list[int]:
       return [] if len(evaluate_ast_all(node.expr, saves)) > 0 else list(range(len(saves)))
     elif node.op == 'AVOID':
       # if there is at least one that is not the expression
-      return all_index(map(lambda save: not evaluate_ast_all(node.expr, [save]), saves))
+      return all_index(not evaluate_ast_all(node.expr, [save]) for save in saves)
 
   elif isinstance(node, BinaryOp):
     # Evaluate left side first

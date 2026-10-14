@@ -6,3 +6,4 @@ input
 output
 resources/fumenInput.csv
 __pycache__
+venv

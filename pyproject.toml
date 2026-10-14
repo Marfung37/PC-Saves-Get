@@ -1,0 +1,9 @@
+# pyproject.toml
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.ruff]
+indent-width = 2
+
+[tool.ruff.lint]
+ignore = ["SIM115"]

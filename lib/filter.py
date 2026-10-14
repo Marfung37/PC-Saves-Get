@@ -1,17 +1,36 @@
 import csv
 from typing import TextIO
-from .saves_reader import SavesReader, COLUMN_QUEUE, COLUMN_FUMEN_COUNT, COLUMN_USED_PIECES, COLUMN_UNUSED_PIECES, COLUMN_FUMENS, COLUMN_UNUSED_PIECES_DELIMITOR, COLUMN_FUMENS_DELIMITOR
-from .parser import Parser as WantedSavesParser, evaluate_ast_all
-from .utils import fumen_combine, fumen_combine_comments, make_fumen_url, make_tiny
-from .minimal import fumens_to_graph, find_minimal_nodes, find_best_set
+from urllib.error import URLError
 
-PATH_COLUMNS = [COLUMN_QUEUE, COLUMN_FUMEN_COUNT, COLUMN_USED_PIECES, COLUMN_UNUSED_PIECES, COLUMN_FUMENS]
+from .minimal import find_best_set, find_minimal_nodes, fumens_to_graph
+from .parser import Parser as WantedSavesParser
+from .parser import evaluate_ast_all
+from .saves_reader import (
+  COLUMN_FUMEN_COUNT,
+  COLUMN_FUMENS,
+  COLUMN_FUMENS_DELIMITOR,
+  COLUMN_QUEUE,
+  COLUMN_UNUSED_PIECES,
+  COLUMN_UNUSED_PIECES_DELIMITOR,
+  COLUMN_USED_PIECES,
+  SavesReader,
+)
+from .utils import fumen_combine, fumen_combine_comments, make_fumen_url, make_tiny
+
+PATH_COLUMNS = [
+  COLUMN_QUEUE,
+  COLUMN_FUMEN_COUNT,
+  COLUMN_USED_PIECES,
+  COLUMN_UNUSED_PIECES,
+  COLUMN_FUMENS,
+]
+
 
 def filter(
-  filepath: str, 
+  filepath: str,
   wanted_saves: list[str],
   labels: list[str],
-  leftover: str, 
+  leftover: str,
   build: str,
   width: int,
   height: int,
@@ -21,14 +40,14 @@ def filter(
   cumulative_percent: bool = False,
   output_type: str = "minimal",
   output_path: str = "",
-  tinyurl: bool = True
+  tinyurl: bool = True,
 ):
   unique_fumens = set()
   line_queue_fumens_map = {}
   line_fumens = []
   total = 0
 
-  wanted_saves_parser = WantedSavesParser() 
+  wanted_saves_parser = WantedSavesParser()
   asts = []
   for wanted_save in wanted_saves:
     asts.append(wanted_saves_parser.parse(wanted_save))
@@ -38,7 +57,7 @@ def filter(
   outfile = None
   filtered_path = None
   if output_type == "file":
-    outfile = open(output_path, 'w')
+    outfile = open(output_path, "w")
     filtered_path = csv.DictWriter(outfile, PATH_COLUMNS)
     filtered_path.writeheader()
 
@@ -62,7 +81,7 @@ def filter(
       raise RuntimeError("Expected fumens to be populated from save reader")
     if row.line is None:
       raise RuntimeError("Expected line to be populated from save reader")
-    
+
     new_fumens = []
     for i in indicies:
       new_fumens += row.fumens[i]
@@ -76,13 +95,17 @@ def filter(
 
     elif filtered_path is not None:
       row.line[COLUMN_FUMENS] = COLUMN_FUMENS_DELIMITOR.join(new_fumens)
-      
-      unused_pieces = row.line[COLUMN_UNUSED_PIECES].split(COLUMN_UNUSED_PIECES_DELIMITOR)
-      row.line[COLUMN_UNUSED_PIECES] = COLUMN_UNUSED_PIECES_DELIMITOR.join([unused_pieces[i] for i in indicies])
-      
+
+      unused_pieces = row.line[COLUMN_UNUSED_PIECES].split(
+        COLUMN_UNUSED_PIECES_DELIMITOR
+      )
+      row.line[COLUMN_UNUSED_PIECES] = COLUMN_UNUSED_PIECES_DELIMITOR.join(
+        [unused_pieces[i] for i in indicies]
+      )
+
       row.line[COLUMN_FUMEN_COUNT] = str(len(new_fumens))
-      row.line[COLUMN_USED_PIECES] = '' # empty as not useful
-   
+      row.line[COLUMN_USED_PIECES] = ""  # empty as not useful
+
       filtered_path.writerow(row.line)
 
     total += 1
@@ -91,7 +114,9 @@ def filter(
     outfile.close()
 
   # No solutions
-  if (output_type == "unique" and len(unique_fumens) == 0) or (output_type == "minimal" and len(line_fumens) == 0):
+  if (output_type == "unique" and len(unique_fumens) == 0) or (
+    output_type == "minimal" and len(line_fumens) == 0
+  ):
     log_file.write("No solutions found")
     if console_print:
       print("No solutions found")
@@ -104,17 +129,27 @@ def filter(
     if console_print:
       print(unique_solves)
   elif output_type == "minimal":
-    generate_minimals(labels, line_fumens, line_queue_fumens_map, total, log_file, console_print, tinyurl, cumulative_percent)
+    generate_minimals(
+      labels,
+      line_fumens,
+      line_queue_fumens_map,
+      total,
+      log_file,
+      console_print,
+      tinyurl,
+      cumulative_percent,
+    )
+
 
 def generate_minimals(
-  labels: list[str], 
-  line_fumens: list[list[str]], 
-  line_queue_fumens_map: dict[str, list[str]], 
+  labels: list[str],
+  line_fumens: list[list[str]],
+  line_queue_fumens_map: dict[str, list[str]],
   total: int,
-  log_file: TextIO, 
-  console_print: bool, 
-  tinyurl: bool, 
-  cumulative_percent: bool
+  log_file: TextIO,
+  console_print: bool,
+  tinyurl: bool,
+  cumulative_percent: bool,
 ):
   graph = fumens_to_graph(line_fumens)
 
@@ -122,15 +157,17 @@ def generate_minimals(
   print(f"{len(graph.edges)} edges, {len(graph.nodes)} nodes")
 
   minimal_sets = find_minimal_nodes(graph.edges)
-  print(f'You must learn {minimal_sets.count} solutions to cover all queues. There are {len(minimal_sets.sets)} combinations of solutions to cover all patterns.');
-  
+  print(
+    f"You must learn {minimal_sets.count} solutions to cover all queues. There are {len(minimal_sets.sets)} combinations of solutions to cover all patterns."
+  )
   best_set = find_best_set(minimal_sets.sets, log_file)
-  fumen_set = set(map(lambda n: n.key, best_set))
+  fumen_set = {n.key for n in best_set}
 
   fumen_queue_map = {}
   for queue, fumens in line_queue_fumens_map.items():
     for fumen in fumens:
-      if fumen not in fumen_set: continue
+      if fumen not in fumen_set:
+        continue
 
       queues = fumen_queue_map.get(fumen)
       if queues is None:
@@ -142,7 +179,6 @@ def generate_minimals(
   fumens = []
   cover_queues = list(fumen_queue_map.values())
   if cumulative_percent:
-
     queue_set = set()
 
     # greedy find the solve with most coverage
@@ -168,14 +204,16 @@ def generate_minimals(
       queue_set |= cover_queues[largest_index]
       cover_count = len(queue_set)
       percent = cover_count / total * 100
-      percent = f': {percent:.2f}% ({cover_count}/{total})'
+      percent = f": {percent:.2f}% ({cover_count}/{total})"
       percents.append(percent)
       indicies.append(largest_index)
 
     fumens = list(fumen_queue_map.keys())
     fumens = [fumens[i] for i in indicies]
   else:
-    items_sorted = sorted(fumen_queue_map.items(), key=lambda item: len(item[1]), reverse=True)
+    items_sorted = sorted(
+      fumen_queue_map.items(), key=lambda item: len(item[1]), reverse=True
+    )
     fumens, cover_queues = zip(*items_sorted)
     fumens = list(fumens)
 
@@ -183,21 +221,21 @@ def generate_minimals(
       cover_count = len(queues)
 
       percent = cover_count / total * 100
-      percent = f': {percent:.2f}% ({cover_count}/{total})'
+      percent = f": {percent:.2f}% ({cover_count}/{total})"
       percents.append(percent)
 
   minimal_fumen = fumen_combine_comments(fumens, percents, True)
-  
+
   line = minimal_fumen
+
   if tinyurl:
     try:
       line = make_tiny(make_fumen_url(minimal_fumen))
-    except:
+    except (URLError, OSError, UnicodeError):
       line = "Tinyurl did not accept fumen due to url length"
-  
+
   line = f"True minimal for {','.join(labels)}:\n{line}"
-  
-  log_file.write(line + '\n')
+
+  log_file.write(line + "\n")
   if console_print:
     print(line)
-  

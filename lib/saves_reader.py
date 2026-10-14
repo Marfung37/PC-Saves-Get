@@ -1,10 +1,10 @@
 import csv
 from collections import Counter
 from dataclasses import dataclass
-from typing import Optional
-from .formulas import WIDTHHEIGHT2NUMPIECES, LONUM2BAGCOMP
-from .utils import fumen_get_comments, sort_queue
+
 from .constants import BAG
+from .formulas import LONUM2BAGCOMP, WIDTHHEIGHT2NUMPIECES
+from .utils import fumen_get_comments, sort_queue
 
 COLUMN_QUEUE = 'ツモ'
 COLUMN_FUMEN_COUNT = '対応地形数'
@@ -31,9 +31,9 @@ class SavesRow:
   saves: list[str]
   solveable: bool
   queue: str
-  fumens: Optional[list[list[str]]] = None
-  line: Optional[dict[str, str]] = None
-  warn: Optional[str] = None
+  fumens: list[list[str]] | None = None
+  line: dict[str, str] | None = None
+  warn: str | None = None
 
 class SavesReader:
   def __init__(self, filepath: str, leftover: str, build: str, width: int, height: int, hold: int):
